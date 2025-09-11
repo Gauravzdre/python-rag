@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn, os
 from app.rag_advanced import process_query, process_document_upload, advanced_rag
@@ -31,6 +33,22 @@ security = HTTPBearer()
 
 # Include tenant management routes
 app.include_router(tenant_router)
+
+# Serve web interface
+@app.get("/")
+async def root():
+    """Serve the main web interface"""
+    return FileResponse("web_interface.html")
+
+@app.get("/web_interface")
+async def web_interface():
+    """Serve the web interface"""
+    return FileResponse("web_interface.html")
+
+@app.get("/web_interface.html")
+async def web_interface_html():
+    """Serve the web interface HTML file"""
+    return FileResponse("web_interface.html")
 
 @app.post("/query")
 async def ask_question(request: QueryRequest, token: HTTPAuthorizationCredentials = Depends(security)):
