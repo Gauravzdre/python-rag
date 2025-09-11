@@ -1110,14 +1110,14 @@
         async function initializeAuth() {
             try {
                 // First check if API is running
-                const healthResponse = await fetch(YOUR_DOMAIN/healthcheck');
+                const healthResponse = await fetch(API_BASE_URL + '/healthcheck');
                 if (!healthResponse.ok) {
                     addMessage('system', '❌ Failed to connect to RAG API. Make sure the server is running.');
                     return;
                 }
                 
                 // Get a valid JWT token from the API
-                const tokenResponse = await fetch(YOUR_DOMAIN/get-token');
+                const tokenResponse = await fetch(API_BASE_URL + '/get-token');
                 if (tokenResponse.ok) {
                     const tokenData = await tokenResponse.json();
                     authToken = tokenData.token;
@@ -1201,7 +1201,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
                 
-                const url = YOUR_DOMAIN/upload/tenant?tenant_id=' + currentTenantId;
+                const url = API_BASE_URL + '/upload/tenant?tenant_id=' + currentTenantId;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1251,7 +1251,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
                 
-                const url = YOUR_DOMAIN/upload/tenant?tenant_id=' + currentTenantId;
+                const url = API_BASE_URL + '/upload/tenant?tenant_id=' + currentTenantId;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1331,7 +1331,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">🤔 Thinking...</div>';
                 
-                const url = YOUR_DOMAIN/query/tenant';
+                const url = API_BASE_URL + '/query/tenant';
                 const body = { query: message, tenant_id: currentTenantId };
                 
                 const response = await fetch(url, {
@@ -1379,7 +1379,7 @@
             if (!authToken) return;
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/', {
+                const response = await fetch(API_BASE_URL + '/tenants/', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1401,7 +1401,7 @@
             if (!authToken) return;
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/', {
+                const response = await fetch(API_BASE_URL + '/tenants/', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1472,7 +1472,7 @@
             if (!authToken) return null;
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/' + tenantId, {
+                const response = await fetch(API_BASE_URL + '/tenants/' + tenantId, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1492,7 +1492,7 @@
             if (!authToken || !currentTenantId) return;
 
             try {
-                const response = await fetch(YOUR_DOMAIN/collection-info?tenant_id=' + currentTenantId, {
+                const response = await fetch(API_BASE_URL + '/collection-info?tenant_id=' + currentTenantId, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1514,7 +1514,7 @@
             if (!authToken || !currentTenantId) return;
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/' + currentTenantId + '/documents', {
+                const response = await fetch(API_BASE_URL + '/tenants/' + currentTenantId + '/documents', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1559,7 +1559,7 @@
 
             try {
                 const [tenantsResponse, totalStats] = await Promise.all([
-                    fetch(YOUR_DOMAIN/tenants/', {
+                    fetch(API_BASE_URL + '/tenants/', {
                         headers: { 'Authorization': `Bearer ${authToken}` }
                     }),
                     // You could add a total stats endpoint here
@@ -1658,7 +1658,7 @@
             };
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/register', {
+                const response = await fetch(API_BASE_URL + '/tenants/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1688,7 +1688,7 @@
             }
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/' + tenantId, {
+                const response = await fetch(API_BASE_URL + '/tenants/' + tenantId, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -1720,7 +1720,7 @@
             }
 
             try {
-                const response = await fetch(YOUR_DOMAIN/tenants/' + currentTenantId + '/documents/' + documentId, {
+                const response = await fetch(API_BASE_URL + '/tenants/' + currentTenantId + '/documents/' + documentId, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -1765,7 +1765,7 @@
                 }
                 
                 // Use the query endpoint to search documents
-                const url = YOUR_DOMAIN/query/tenant';
+                const url = API_BASE_URL + '/query/tenant';
                 const body = { query: query, tenant_id: currentTenantId };
                 
                 const response = await fetch(url, {
