@@ -1,0 +1,18 @@
+fastapi==0.116.1
+uvicorn[standard]==0.28.0
+pydantic>=2.6,<3
+python-dotenv
+httpx
+python-jose[cryptography]
+
+# Advanced RAG Dependencies (OpenRouter-based, cost-effective)
+langchain==0.3.0
+langchain-core==0.3.0
+
+# Document Processing (Free/Cheap)
+PyPDF2==3.0.1
+python-multipart==0.0.6
+pypdf==4.0.1
+
+# Additional utilities
+numpy>=1.24.0

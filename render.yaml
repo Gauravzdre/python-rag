@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: rag-chatbot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: OPENROUTER_API_KEY
+        sync: false  # Set this in Render dashboard
+    healthCheckPath: /healthcheck
+    plan: free

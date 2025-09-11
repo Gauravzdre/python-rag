@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Tenant RAG Chatbot Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .header-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-controls button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .header-controls button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: #4facfe;
+            background: white;
+            border-bottom-color: #4facfe;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .chat-section {
+            grid-column: 1 / -1;
+        }
+
+        .chat-container {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.assistant {
+            background: #f3e5f5;
+            margin-right: auto;
+        }
+
+        .message.system {
+            background: #fff3e0;
+            margin: 0 auto;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+
+        .input-group button {
+            flex: 0 0 auto;
+            width: auto;
+            padding: 12px 20px;
+        }
+
+        .tenant-selector {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tenant-selector h3 {
+            color: #004085;
+            margin-bottom: 10px;
+        }
+
+        .tenant-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .tenant-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4facfe;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .tenant-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .tenant-item {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tenant-item:last-child {
+            border-bottom: none;
+        }
+
+        .tenant-item.active {
+            background: #e8f4fd;
+        }
+
+        .tenant-details {
+            flex: 1;
+        }
+
+        .tenant-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .tenant-domain {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .tenant-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tenant-actions button {
+            padding: 5px 10px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .api-info {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .api-info h3 {
+            color: #004085;
+            margin-bottom: 10px;
+        }
+
+        .api-info p {
+            color: #004085;
+            margin-bottom: 5px;
+        }
+
+        .api-endpoint {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .api-endpoint h3 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .api-endpoint p {
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .code-block code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .query-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .query-content {
+            flex: 1;
+        }
+
+        .query-question {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .query-answer {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .query-meta {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .query-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .query-actions button {
+            padding: 5px 8px;
+            font-size: 12px;
+            width: auto;
+            min-width: auto;
+        }
+
+        .favorite {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        .search-result {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .search-result h4 {
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .search-result .snippet {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .search-result .meta {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .header-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .tenant-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Multi-Tenant RAG Chatbot</h1>
+            <p>Manage multiple companies, upload documents, and chat with AI-powered insights</p>
+            <div class="header-controls">
+                <button onclick="initializeAuth()">🔄 Refresh Connection</button>
+                <button onclick="showTenantModal()">➕ Add Tenant</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('chat')">💬 Chat</button>
+            <button class="nav-tab" onclick="switchTab('documents')">📄 Documents</button>
+            <button class="nav-tab" onclick="switchTab('history')">📝 History</button>
+            <button class="nav-tab" onclick="switchTab('tenants')">🏢 Tenants</button>
+            <button class="nav-tab" onclick="switchTab('analytics')">📊 Analytics</button>
+            <button class="nav-tab" onclick="switchTab('api')">📚 API Docs</button>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat-tab" class="tab-content active">
+            <div class="tenant-selector">
+                <h3>🏢 Current Tenant</h3>
+                <div class="tenant-info">
+                    <div>
+                        <strong id="currentTenantName">No Tenant Selected</strong>
+                        <div id="currentTenantDomain">Please select a tenant</div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="showTenantSelector()">Switch Tenant</button>
+                </div>
+                <div class="tenant-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="tenantDocCount">0</div>
+                        <div class="stat-label">Documents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="tenantQueryCount">0</div>
+                        <div class="stat-label">Queries Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="tenantTotalQueries">0</div>
+                        <div class="stat-label">Total Queries</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="section">
+                    <h2>📄 Upload Document</h2>
+                    <div class="form-group">
+                        <label for="fileInput">Choose a file:</label>
+                        <input type="file" id="fileInput" accept=".txt,.md,.pdf,.json,.csv" />
+                    </div>
+                    <button class="btn" onclick="uploadDocument()">Upload Document</button>
+                    <div id="uploadStatus"></div>
+                </div>
+
+                <div class="section">
+                    <h2>⚙️ AI Response Customization</h2>
+                    <div class="form-group">
+                        <label for="responseStyle">Response Style:</label>
+                        <select id="responseStyle">
+                            <option value="helpful">Helpful Assistant</option>
+                            <option value="professional">Professional</option>
+                            <option value="casual">Casual & Friendly</option>
+                            <option value="technical">Technical Expert</option>
+                            <option value="creative">Creative & Engaging</option>
+                            <option value="concise">Concise & Direct</option>
+                            <option value="sales">Sales & Marketing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customPrompt">Custom Instructions (optional):</label>
+                        <textarea id="customPrompt" placeholder="e.g., Keep responses under 50 words, use bullet points, be very concise..."></textarea>
+                    </div>
+                    <button class="btn" onclick="updateResponseStyle()">Update AI Style</button>
+                    <div id="styleStatus"></div>
+                </div>
+
+                <div class="section chat-section">
+                    <h2>💬 Chat with Your Documents</h2>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="message system">
+                            👋 Welcome! Select a tenant, upload documents, then start chatting. I'll answer questions based on your uploaded content.
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="chatInput" placeholder="Ask a question about your uploaded documents..." onkeypress="handleKeyPress(event)">
+                        <button class="btn" onclick="sendMessage()">Send</button>
+                    </div>
+                    <div id="chatStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div id="documents-tab" class="tab-content">
+            <div class="main-content">
+                <div class="section">
+                    <h2>📄 Document Management</h2>
+                    <div class="form-group">
+                        <label for="docFileInput">Upload New Document:</label>
+                        <input type="file" id="docFileInput" accept=".txt,.md,.pdf,.json,.csv" />
+                    </div>
+                    <button class="btn" onclick="uploadDocumentFromTab()">Upload Document</button>
+                    <div id="docUploadStatus"></div>
+                </div>
+
+                <div class="section">
+                    <h2>🔍 Search Documents</h2>
+                    <div class="form-group">
+                        <label for="searchInput">Search in documents:</label>
+                        <input type="text" id="searchInput" placeholder="Enter keywords to search in your documents..." />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="searchFileType">File Type:</label>
+                            <select id="searchFileType">
+                                <option value="">All Types</option>
+                                <option value="pdf">PDF</option>
+                                <option value="text">Text</option>
+                                <option value="json">JSON</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchSortBy">Sort By:</label>
+                            <select id="searchSortBy">
+                                <option value="relevance">Relevance</option>
+                                <option value="date">Upload Date</option>
+                                <option value="name">File Name</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="searchDocuments()">🔍 Search</button>
+                    <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+                    <div id="searchStatus"></div>
+                </div>
+
+                <div class="section">
+                    <h2>📚 Current Documents</h2>
+                    <div id="documentsList">
+                        <p>No documents uploaded yet.</p>
+                    </div>
+                </div>
+
+                <div class="section" id="searchResultsSection" style="display: none;">
+                    <h2>🔍 Search Results</h2>
+                    <div id="searchResults">
+                        <!-- Search results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div class="main-content">
+                <div class="section">
+                    <h2>📝 Query History & Favorites</h2>
+                    <div class="form-group">
+                        <label for="historySearch">Search in history:</label>
+                        <input type="text" id="historySearch" placeholder="Search your previous queries..." />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="historyFilter">Filter:</label>
+                            <select id="historyFilter">
+                                <option value="all">All Queries</option>
+                                <option value="favorites">Favorites Only</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="historySort">Sort By:</label>
+                            <select id="historySort">
+                                <option value="recent">Most Recent</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="favorites">Favorites First</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="loadQueryHistory()">🔄 Refresh</button>
+                    <button class="btn btn-secondary" onclick="clearHistory()">🗑️ Clear All</button>
+                </div>
+
+                <div class="section">
+                    <h2>⭐ Favorites</h2>
+                    <div id="favoritesList">
+                        <p>No favorites yet. Click the ⭐ button on any query to add it to favorites.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📋 Recent Queries</h2>
+                    <div id="queryHistoryList">
+                        <p>Loading query history...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenants Tab -->
+        <div id="tenants-tab" class="tab-content">
+            <div class="main-content">
+                <div class="section">
+                    <h2>🏢 Tenant Management</h2>
+                    <button class="btn" onclick="showTenantModal()">➕ Add New Tenant</button>
+                    <div id="tenantManagementStatus"></div>
+                </div>
+
+                <div class="section">
+                    <h2>📋 All Tenants</h2>
+                    <div class="tenant-list" id="tenantsList">
+                        <p>Loading tenants...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="main-content">
+                <div class="section">
+                    <h2>📊 System Analytics</h2>
+                    <div class="tenant-stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalTenants">0</div>
+                            <div class="stat-label">Total Tenants</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalDocuments">0</div>
+                            <div class="stat-label">Total Documents</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalQueries">0</div>
+                            <div class="stat-label">Total Queries</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="queriesToday">0</div>
+                            <div class="stat-label">Queries Today</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📈 Tenant Performance</h2>
+                    <div id="tenantPerformance">
+                        <p>Loading performance data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Documentation Tab -->
+        <div id="api-tab" class="tab-content">
+            <div class="main-content">
+                <div class="section">
+                    <h2>📚 API Documentation</h2>
+                    <div class="tenant-selector">
+                        <h3>🏢 Current Tenant API</h3>
+                        <div class="tenant-info">
+                            <div>
+                                <strong id="apiTenantName">No Tenant Selected</strong>
+                                <div id="apiTenantDomain">Please select a tenant</div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="copyApiKey()">📋 Copy API Key</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🔑 Authentication</h2>
+                    <div class="api-info">
+                        <p><strong>API Key:</strong> <code id="apiKeyDisplay">Click "Copy API Key" to get your key</code></p>
+                        <p><strong>Authorization Header:</strong> <code>Authorization: Bearer YOUR_API_KEY</code></p>
+                        <p><strong>Base URL:</strong> <code>http://localhost:8000</code></p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>💬 Chat Endpoints</h2>
+                    <div class="api-endpoint">
+                        <h3>POST /query</h3>
+                        <p>Send a query to the RAG system</p>
+                        <div class="code-block">
+                            <pre><code>curl -X POST "http://localhost:8000/query" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is the main topic of the document?"}'</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <h3>POST /query/tenant</h3>
+                        <p>Send a tenant-specific query</p>
+                        <div class="code-block">
+                            <pre><code>curl -X POST "http://localhost:8000/query/tenant" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is the main topic?", "tenant_id": "your_tenant_id"}'</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📄 Document Endpoints</h2>
+                    <div class="api-endpoint">
+                        <h3>POST /upload</h3>
+                        <p>Upload a document to the default tenant</p>
+                        <div class="code-block">
+                            <pre><code>curl -X POST "http://localhost:8000/upload" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "file=@document.pdf"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <h3>POST /upload/tenant</h3>
+                        <p>Upload a document to a specific tenant</p>
+                        <div class="code-block">
+                            <pre><code>curl -X POST "http://localhost:8000/upload/tenant?tenant_id=your_tenant_id" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "file=@document.pdf"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <h3>GET /tenants/{tenant_id}/documents</h3>
+                        <p>Get all documents for a tenant</p>
+                        <div class="code-block">
+                            <pre><code>curl -X GET "http://localhost:8000/tenants/your_tenant_id/documents" \
+  -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🏢 Tenant Management</h2>
+                    <div class="api-endpoint">
+                        <h3>GET /tenants/</h3>
+                        <p>List all tenants</p>
+                        <div class="code-block">
+                            <pre><code>curl -X GET "http://localhost:8000/tenants/" \
+  -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <h3>GET /tenants/{tenant_id}</h3>
+                        <p>Get specific tenant information</p>
+                        <div class="code-block">
+                            <pre><code>curl -X GET "http://localhost:8000/tenants/your_tenant_id" \
+  -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <h3>GET /collection-info</h3>
+                        <p>Get collection information for current tenant</p>
+                        <div class="code-block">
+                            <pre><code>curl -X GET "http://localhost:8000/collection-info?tenant_id=your_tenant_id" \
+  -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📊 Response Format</h2>
+                    <div class="api-info">
+                        <h3>Query Response:</h3>
+                        <div class="code-block">
+                            <pre><code>{
+  "answer": "The main topic is...",
+  "sources": [
+    {"source": "document.pdf"},
+    {"source": "report.txt"}
+  ],
+  "tenant_id": "your_tenant_id"
+}</code></pre>
+                        </div>
+                        
+                        <h3>Upload Response:</h3>
+                        <div class="code-block">
+                            <pre><code>{
+  "chunks": 15,
+  "status": "success",
+  "message": "Document processed successfully",
+  "tenant_id": "your_tenant_id",
+  "filename": "document.pdf",
+  "file_type": "pdf"
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenant Registration Modal -->
+        <div id="tenantModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🏢 Register New Tenant</h2>
+                    <span class="close" onclick="closeTenantModal()">&times;</span>
+                </div>
+                <form id="tenantForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyName">Company Name *</label>
+                            <input type="text" id="companyName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="companyDomain">Company Domain *</label>
+                            <input type="text" id="companyDomain" placeholder="example.com" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyEmail">Company Email *</label>
+                            <input type="email" id="companyEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="companyPhone">Company Phone</label>
+                            <input type="tel" id="companyPhone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="plan">Plan</label>
+                            <select id="plan">
+                                <option value="basic">Basic</option>
+                                <option value="pro">Pro</option>
+                                <option value="enterprise">Enterprise</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="primaryColor">Primary Color</label>
+                            <input type="color" id="primaryColor" value="#007bff">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyDescription">Company Description</label>
+                        <textarea id="companyDescription" placeholder="Brief description of the company..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="aiPersonality">AI Personality</label>
+                            <select id="aiPersonality">
+                                <option value="helpful">Helpful</option>
+                                <option value="professional">Professional</option>
+                                <option value="casual">Casual</option>
+                                <option value="technical">Technical</option>
+                                <option value="creative">Creative</option>
+                                <option value="sales">Sales</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="responseStyleModal">Response Style</label>
+                            <select id="responseStyleModal">
+                                <option value="concise">Concise</option>
+                                <option value="detailed">Detailed</option>
+                                <option value="conversational">Conversational</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Register Tenant</button>
+                </form>
+                <div id="tenantModalStatus"></div>
+            </div>
+        </div>
+
+        <!-- Tenant Selector Modal -->
+        <div id="tenantSelectorModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🏢 Select Tenant</h2>
+                    <span class="close" onclick="closeTenantSelector()">&times;</span>
+                </div>
+                <div class="tenant-list" id="tenantSelectorList">
+                    <p>Loading tenants...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-info">
+            <h3>🔗 API Information</h3>
+            <p><strong>RAG API:</strong> http://localhost:8000</p>
+            <p><strong>Documentation:</strong> <a href="http://localhost:8000/docs" target="_blank">http://localhost:8000/docs</a></p>
+            <p><strong>Health Check:</strong> <a href="http://localhost:8000/healthcheck" target="_blank">http://localhost:8000/healthcheck</a></p>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let currentResponseStyle = 'helpful';
+        let customInstructions = '';
+        let currentTenantId = null; // Will be set when tenants are loaded
+        let currentTenantInfo = null;
+        let queryHistory = [];
+        let favorites = [];
+        let currentApiKey = null;
+
+        // Initialize auth token
+        async function initializeAuth() {
+            try {
+                // First check if API is running
+                const healthResponse = await fetch('http://localhost:8000/healthcheck');
+                if (!healthResponse.ok) {
+                    addMessage('system', '❌ Failed to connect to RAG API. Make sure the server is running.');
+                    return;
+                }
+                
+                // Get a valid JWT token from the API
+                const tokenResponse = await fetch('http://localhost:8000/get-token');
+                if (tokenResponse.ok) {
+                    const tokenData = await tokenResponse.json();
+                    authToken = tokenData.token;
+                    addMessage('system', '✅ Connected to RAG API successfully! Ready to upload documents and chat.');
+                    await loadTenants();
+                    // Set first tenant as current if none selected
+                    if (!currentTenantId) {
+                        await setFirstTenantAsCurrent();
+                    }
+                    await updateTenantStats();
+                } else {
+                    const errorText = await tokenResponse.text();
+                    addMessage('system', `❌ Failed to get authentication token. Status: ${tokenResponse.status}, Error: ${errorText}`);
+                }
+            } catch (error) {
+                addMessage('system', '❌ Cannot connect to RAG API. Please start the server first.');
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab-specific data
+            if (tabName === 'tenants') {
+                loadTenants();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            } else if (tabName === 'documents') {
+                loadDocuments();
+            } else if (tabName === 'history') {
+                loadQueryHistory();
+            } else if (tabName === 'api') {
+                loadApiDocumentation();
+            }
+        }
+
+        // Add message to chat
+        function addMessage(type, content) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Upload document
+        async function uploadDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files[0]) {
+                statusDiv.innerHTML = '<div class="status error">Please select a file first.</div>';
+                return;
+            }
+
+            if (!authToken) {
+                statusDiv.innerHTML = '<div class="status error">Not connected to API. Please refresh the page.</div>';
+                return;
+            }
+
+            if (!currentTenantId) {
+                statusDiv.innerHTML = '<div class="status error">Please select a tenant first.</div>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
+                
+                const url = `http://localhost:8000/upload/tenant?tenant_id=${currentTenantId}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = `<div class="status success">✅ Document uploaded successfully! (${result.chunks} chunks indexed)</div>`;
+                    addMessage('system', `📄 Document "${fileInput.files[0].name}" uploaded and indexed successfully!`);
+                    await updateTenantStats();
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Upload failed: ${result.detail || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Upload failed: ${error.message}</div>`;
+            }
+        }
+
+        // Upload document from documents tab
+        async function uploadDocumentFromTab() {
+            const fileInput = document.getElementById('docFileInput');
+            const statusDiv = document.getElementById('docUploadStatus');
+            
+            if (!fileInput.files[0]) {
+                statusDiv.innerHTML = '<div class="status error">Please select a file first.</div>';
+                return;
+            }
+
+            if (!authToken) {
+                statusDiv.innerHTML = '<div class="status error">Not connected to API. Please refresh the page.</div>';
+                return;
+            }
+
+            if (!currentTenantId) {
+                statusDiv.innerHTML = '<div class="status error">Please select a tenant first.</div>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
+                
+                const url = `http://localhost:8000/upload/tenant?tenant_id=${currentTenantId}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = `<div class="status success">✅ Document uploaded successfully! (${result.chunks} chunks indexed)</div>`;
+                    await loadDocuments();
+                    await updateTenantStats();
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Upload failed: ${result.detail || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Upload failed: ${error.message}</div>`;
+            }
+        }
+
+        // Update response style
+        function updateResponseStyle() {
+            const styleSelect = document.getElementById('responseStyle');
+            const customPrompt = document.getElementById('customPrompt');
+            const statusDiv = document.getElementById('styleStatus');
+            
+            currentResponseStyle = styleSelect.value;
+            customInstructions = customPrompt.value;
+            
+            const styleMessages = {
+                'helpful': 'You are a helpful assistant. Keep responses SHORT (2-3 sentences max).',
+                'professional': 'You are a professional assistant. Provide clear, concise responses (2-3 sentences max).',
+                'casual': 'You are a friendly assistant. Keep responses short and conversational (2-3 sentences max).',
+                'technical': 'You are a technical expert. Provide precise, concise answers (2-3 sentences max).',
+                'creative': 'You are a creative assistant. Make responses interesting but brief (2-3 sentences max).',
+                'concise': 'You are a concise assistant. Provide direct, to-the-point answers (1-2 sentences max).',
+                'sales': 'You are a sales assistant. Be enthusiastic but brief (2-3 sentences max).'
+            };
+
+            let systemPrompt = styleMessages[currentResponseStyle];
+            if (customInstructions.trim()) {
+                systemPrompt += ` Additional instructions: ${customInstructions}`;
+            }
+
+            statusDiv.innerHTML = `<div class="status success">✅ AI response style updated to: ${styleSelect.options[styleSelect.selectedIndex].text}</div>`;
+            addMessage('system', `🎨 AI response style updated to: ${styleSelect.options[styleSelect.selectedIndex].text}`);
+        }
+
+        // Send chat message
+        async function sendMessage() {
+            const chatInput = document.getElementById('chatInput');
+            const statusDiv = document.getElementById('chatStatus');
+            const message = chatInput.value.trim();
+
+            if (!message) {
+                statusDiv.innerHTML = '<div class="status error">Please enter a message.</div>';
+                return;
+            }
+
+            if (!authToken) {
+                statusDiv.innerHTML = '<div class="status error">Not connected to API. Please refresh the page.</div>';
+                return;
+            }
+
+            if (!currentTenantId) {
+                statusDiv.innerHTML = '<div class="status error">Please select a tenant first.</div>';
+                return;
+            }
+
+            // Add user message to chat
+            addMessage('user', message);
+            chatInput.value = '';
+
+            try {
+                statusDiv.innerHTML = '<div class="status info">🤔 Thinking...</div>';
+                
+                const url = 'http://localhost:8000/query/tenant';
+                const body = { query: message, tenant_id: currentTenantId };
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="status success">✅ Response received</div>';
+                    addMessage('assistant', result.answer);
+                    
+                    if (result.sources && result.sources.length > 0) {
+                        const sources = result.sources.map(s => s.source).join(', ');
+                        addMessage('system', `📚 Sources: ${sources}`);
+                    }
+                    
+                    // Save to query history
+                    saveQueryToHistory(message, result.answer, result.sources);
+                    await updateTenantStats();
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Query failed: ${result.detail || 'Unknown error'}</div>`;
+                    addMessage('assistant', `❌ Error: ${result.detail || 'Failed to get response'}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Query failed: ${error.message}</div>`;
+                addMessage('assistant', `❌ Error: ${error.message}`);
+            }
+        }
+
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Load tenants
+        async function loadTenants() {
+            if (!authToken) return;
+
+            try {
+                const response = await fetch('http://localhost:8000/tenants/', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayTenants(data.tenants);
+                } else {
+                    console.error('Failed to load tenants');
+                }
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+            }
+        }
+
+        // Set first tenant as current if none selected
+        async function setFirstTenantAsCurrent() {
+            if (!authToken) return;
+
+            try {
+                const response = await fetch('http://localhost:8000/tenants/', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.tenants && data.tenants.length > 0) {
+                        const firstTenant = data.tenants[0];
+                        await selectTenant(firstTenant.tenant_id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error setting first tenant:', error);
+            }
+        }
+
+        // Display tenants
+        function displayTenants(tenants) {
+            const tenantsList = document.getElementById('tenantsList');
+            const tenantSelectorList = document.getElementById('tenantSelectorList');
+            
+            if (tenants.length === 0) {
+                tenantsList.innerHTML = '<p>No tenants found. Create your first tenant!</p>';
+                tenantSelectorList.innerHTML = '<p>No tenants available.</p>';
+                return;
+            }
+
+            const tenantHtml = tenants.map(tenant => `
+                <div class="tenant-item ${tenant.tenant_id === currentTenantId ? 'active' : ''}">
+                    <div class="tenant-details">
+                        <div class="tenant-name">${tenant.company_name}</div>
+                        <div class="tenant-domain">${tenant.company_domain} (${tenant.tenant_id})</div>
+                        <div style="font-size: 0.8em; color: #6c757d;">
+                            Plan: ${tenant.plan} | Status: ${tenant.status} | Docs: ${tenant.document_count}
+                        </div>
+                    </div>
+                    <div class="tenant-actions">
+                        <button class="btn btn-secondary" onclick="selectTenant('${tenant.tenant_id}')">Select</button>
+                        <button class="btn btn-danger" onclick="deleteTenant('${tenant.tenant_id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            tenantsList.innerHTML = tenantHtml;
+            tenantSelectorList.innerHTML = tenantHtml;
+        }
+
+        // Select tenant
+        async function selectTenant(tenantId) {
+            currentTenantId = tenantId;
+            
+            // Update UI
+            const tenant = await getTenantInfo(tenantId);
+            if (tenant) {
+                document.getElementById('currentTenantName').textContent = tenant.company_name;
+                document.getElementById('currentTenantDomain').textContent = tenant.company_domain;
+                currentTenantInfo = tenant;
+            }
+            
+            await updateTenantStats();
+            closeTenantSelector();
+            addMessage('system', `🏢 Switched to tenant: ${tenant?.company_name || tenantId}`);
+        }
+
+        // Get tenant info
+        async function getTenantInfo(tenantId) {
+            if (!authToken) return null;
+
+            try {
+                const response = await fetch(`http://localhost:8000/tenants/${tenantId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error('Error getting tenant info:', error);
+            }
+            return null;
+        }
+
+        // Update tenant stats
+        async function updateTenantStats() {
+            if (!authToken || !currentTenantId) return;
+
+            try {
+                const response = await fetch(`http://localhost:8000/collection-info?tenant_id=${currentTenantId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('tenantDocCount').textContent = data.document_count || 0;
+                    document.getElementById('tenantQueryCount').textContent = data.queries_today || 0;
+                    document.getElementById('tenantTotalQueries').textContent = data.total_queries || 0;
+                }
+            } catch (error) {
+                console.error('Error updating tenant stats:', error);
+            }
+        }
+
+        // Load documents
+        async function loadDocuments() {
+            if (!authToken || !currentTenantId) return;
+
+            try {
+                const response = await fetch(`http://localhost:8000/tenants/${currentTenantId}/documents`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayDocuments(data.documents);
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        // Display documents
+        function displayDocuments(documents) {
+            const documentsList = document.getElementById('documentsList');
+            
+            if (documents.length === 0) {
+                documentsList.innerHTML = '<p>No documents uploaded yet.</p>';
+                return;
+            }
+
+            const docsHtml = documents.map(doc => `
+                <div class="tenant-item">
+                    <div class="tenant-details">
+                        <div class="tenant-name">${doc.filename}</div>
+                        <div class="tenant-domain">Type: ${doc.file_type} | Chunks: ${doc.chunks?.length || 0} | Uploaded: ${new Date(doc.upload_time).toLocaleDateString()}</div>
+                    </div>
+                    <div class="tenant-actions">
+                        <button class="btn btn-danger" onclick="deleteDocument('${doc.document_id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            documentsList.innerHTML = docsHtml;
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            if (!authToken) return;
+
+            try {
+                const [tenantsResponse, totalStats] = await Promise.all([
+                    fetch('http://localhost:8000/tenants/', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    }),
+                    // You could add a total stats endpoint here
+                ]);
+
+                if (tenantsResponse.ok) {
+                    const tenantsData = await tenantsResponse.json();
+                    const tenants = tenantsData.tenants;
+                    
+                    // Calculate totals
+                    const totalTenants = tenants.length;
+                    const totalDocuments = tenants.reduce((sum, t) => sum + t.document_count, 0);
+                    const totalQueries = tenants.reduce((sum, t) => sum + t.total_queries, 0);
+                    
+                    // Update UI
+                    document.getElementById('totalTenants').textContent = totalTenants;
+                    document.getElementById('totalDocuments').textContent = totalDocuments;
+                    document.getElementById('totalQueries').textContent = totalQueries;
+                    document.getElementById('queriesToday').textContent = 'N/A'; // Would need daily stats endpoint
+                    
+                    // Display tenant performance
+                    displayTenantPerformance(tenants);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Display tenant performance
+        function displayTenantPerformance(tenants) {
+            const performanceDiv = document.getElementById('tenantPerformance');
+            
+            const performanceHtml = tenants.map(tenant => `
+                <div class="tenant-item">
+                    <div class="tenant-details">
+                        <div class="tenant-name">${tenant.company_name}</div>
+                        <div class="tenant-domain">${tenant.company_domain}</div>
+                        <div style="font-size: 0.8em; color: #6c757d;">
+                            Documents: ${tenant.document_count} | Queries: ${tenant.total_queries} | Plan: ${tenant.plan}
+                        </div>
+                    </div>
+                    <div class="tenant-actions">
+                        <span style="color: ${tenant.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                            ${tenant.status.toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+            performanceDiv.innerHTML = performanceHtml;
+        }
+
+        // Show tenant modal
+        function showTenantModal() {
+            document.getElementById('tenantModal').style.display = 'block';
+        }
+
+        // Close tenant modal
+        function closeTenantModal() {
+            document.getElementById('tenantModal').style.display = 'none';
+            document.getElementById('tenantForm').reset();
+            document.getElementById('tenantModalStatus').innerHTML = '';
+        }
+
+        // Show tenant selector
+        function showTenantSelector() {
+            document.getElementById('tenantSelectorModal').style.display = 'block';
+        }
+
+        // Close tenant selector
+        function closeTenantSelector() {
+            document.getElementById('tenantSelectorModal').style.display = 'none';
+        }
+
+        // Register tenant
+        async function registerTenant(event) {
+            event.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('tenantModalStatus').innerHTML = '<div class="status error">Not connected to API.</div>';
+                return;
+            }
+
+            const formData = {
+                company_name: document.getElementById('companyName').value,
+                company_domain: document.getElementById('companyDomain').value,
+                company_email: document.getElementById('companyEmail').value,
+                company_phone: document.getElementById('companyPhone').value,
+                plan: document.getElementById('plan').value,
+                max_documents: 100,
+                max_queries_per_day: 1000,
+                ai_personality: document.getElementById('aiPersonality').value,
+                response_style: document.getElementById('responseStyleModal').value,
+                primary_color: document.getElementById('primaryColor').value,
+                company_description: document.getElementById('companyDescription').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:8000/tenants/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('tenantModalStatus').innerHTML = '<div class="status success">✅ Tenant registered successfully!</div>';
+                    closeTenantModal();
+                    await loadTenants();
+                } else {
+                    document.getElementById('tenantModalStatus').innerHTML = `<div class="status error">❌ Registration failed: ${result.detail || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('tenantModalStatus').innerHTML = `<div class="status error">❌ Registration failed: ${error.message}</div>`;
+            }
+        }
+
+        // Delete tenant
+        async function deleteTenant(tenantId) {
+            if (!authToken || !confirm('Are you sure you want to delete this tenant? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8000/tenants/${tenantId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    await loadTenants();
+                    if (tenantId === currentTenantId) {
+                        // Set first available tenant as current, or null if none
+                        await setFirstTenantAsCurrent();
+                        if (!currentTenantId) {
+                            document.getElementById('currentTenantName').textContent = 'No Tenant Selected';
+                            document.getElementById('currentTenantDomain').textContent = 'Please add a tenant';
+                        }
+                    }
+                } else {
+                    alert('Failed to delete tenant');
+                }
+            } catch (error) {
+                alert('Error deleting tenant: ' + error.message);
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(documentId) {
+            if (!authToken || !confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8000/tenants/${currentTenantId}/documents/${documentId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    await loadDocuments();
+                    await updateTenantStats();
+                } else {
+                    alert('Failed to delete document');
+                }
+            } catch (error) {
+                alert('Error deleting document: ' + error.message);
+            }
+        }
+
+        // Document Search Functions
+        async function searchDocuments() {
+            const searchInput = document.getElementById('searchInput');
+            const searchStatus = document.getElementById('searchStatus');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const searchResults = document.getElementById('searchResults');
+            
+            const query = searchInput.value.trim();
+            if (!query) {
+                searchStatus.innerHTML = '<div class="status error">Please enter a search query.</div>';
+                return;
+            }
+
+            if (!authToken) {
+                searchStatus.innerHTML = '<div class="status error">Not connected to API.</div>';
+                return;
+            }
+
+            try {
+                searchStatus.innerHTML = '<div class="status info">🔍 Searching documents...</div>';
+                
+                if (!currentTenantId) {
+                    searchStatus.innerHTML = '<div class="status error">Please select a tenant first.</div>';
+                    return;
+                }
+                
+                // Use the query endpoint to search documents
+                const url = 'http://localhost:8000/query/tenant';
+                const body = { query: query, tenant_id: currentTenantId };
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    searchStatus.innerHTML = '<div class="status success">✅ Search completed</div>';
+                    
+                    // Display search results
+                    const resultsHtml = `
+                        <div class="search-result">
+                            <h4>Search Query: "${query}"</h4>
+                            <div class="snippet">${result.answer}</div>
+                            <div class="meta">
+                                Sources: ${result.sources ? result.sources.map(s => s.source).join(', ') : 'None'}
+                                | Tenant: ${currentTenantId}
+                            </div>
+                        </div>
+                    `;
+                    
+                    searchResults.innerHTML = resultsHtml;
+                    searchResultsSection.style.display = 'block';
+                } else {
+                    searchStatus.innerHTML = `<div class="status error">❌ Search failed: ${result.detail || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                searchStatus.innerHTML = `<div class="status error">❌ Search failed: ${error.message}</div>`;
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchFileType').value = '';
+            document.getElementById('searchSortBy').value = 'relevance';
+            document.getElementById('searchStatus').innerHTML = '';
+            document.getElementById('searchResultsSection').style.display = 'none';
+        }
+
+        // Query History Functions
+        function saveQueryToHistory(question, answer, sources) {
+            const queryItem = {
+                id: Date.now(),
+                question: question,
+                answer: answer,
+                sources: sources || [],
+                timestamp: new Date().toISOString(),
+                tenantId: currentTenantId,
+                isFavorite: false
+            };
+            
+            queryHistory.unshift(queryItem);
+            
+            // Keep only last 100 queries
+            if (queryHistory.length > 100) {
+                queryHistory = queryHistory.slice(0, 100);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+        }
+
+        function loadQueryHistory() {
+            // Load from localStorage
+            const saved = localStorage.getItem('queryHistory');
+            if (saved) {
+                queryHistory = JSON.parse(saved);
+            }
+            
+            // Load favorites
+            const savedFavorites = localStorage.getItem('favorites');
+            if (savedFavorites) {
+                favorites = JSON.parse(savedFavorites);
+            }
+            
+            displayQueryHistory();
+            displayFavorites();
+        }
+
+        function displayQueryHistory() {
+            const historyList = document.getElementById('queryHistoryList');
+            const filter = document.getElementById('historyFilter').value;
+            const sort = document.getElementById('historySort').value;
+            const search = document.getElementById('historySearch').value.toLowerCase();
+            
+            let filteredHistory = queryHistory.filter(item => {
+                // Filter by tenant
+                if (item.tenantId !== currentTenantId) return false;
+                
+                // Filter by type
+                if (filter === 'favorites' && !item.isFavorite) return false;
+                if (filter === 'today') {
+                    const today = new Date().toDateString();
+                    if (new Date(item.timestamp).toDateString() !== today) return false;
+                }
+                if (filter === 'week') {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    if (new Date(item.timestamp) < weekAgo) return false;
+                }
+                if (filter === 'month') {
+                    const monthAgo = new Date();
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    if (new Date(item.timestamp) < monthAgo) return false;
+                }
+                
+                // Filter by search
+                if (search && !item.question.toLowerCase().includes(search) && !item.answer.toLowerCase().includes(search)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Sort
+            if (sort === 'recent') {
+                filteredHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            } else if (sort === 'oldest') {
+                filteredHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            } else if (sort === 'favorites') {
+                filteredHistory.sort((a, b) => b.isFavorite - a.isFavorite);
+            }
+            
+            if (filteredHistory.length === 0) {
+                historyList.innerHTML = '<p>No queries found matching your criteria.</p>';
+                return;
+            }
+            
+            const historyHtml = filteredHistory.map(item => `
+                <div class="query-item ${item.isFavorite ? 'favorite' : ''}">
+                    <div class="query-content">
+                        <div class="query-question">${item.question}</div>
+                        <div class="query-answer">${item.answer.substring(0, 150)}${item.answer.length > 150 ? '...' : ''}</div>
+                        <div class="query-meta">
+                            ${new Date(item.timestamp).toLocaleString()} | 
+                            Sources: ${item.sources.map(s => s.source).join(', ')}
+                        </div>
+                    </div>
+                    <div class="query-actions">
+                        <button class="btn btn-secondary" onclick="toggleFavorite(${item.id})">
+                            ${item.isFavorite ? '⭐' : '☆'}
+                        </button>
+                        <button class="btn btn-secondary" onclick="reuseQuery('${item.question.replace(/'/g, "\\'")}')">
+                            🔄
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteQuery(${item.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            historyList.innerHTML = historyHtml;
+        }
+
+        function displayFavorites() {
+            const favoritesList = document.getElementById('favoritesList');
+            const favoriteQueries = queryHistory.filter(item => item.isFavorite && item.tenantId === currentTenantId);
+            
+            if (favoriteQueries.length === 0) {
+                favoritesList.innerHTML = '<p>No favorites yet. Click the ⭐ button on any query to add it to favorites.</p>';
+                return;
+            }
+            
+            const favoritesHtml = favoriteQueries.map(item => `
+                <div class="query-item favorite">
+                    <div class="query-content">
+                        <div class="query-question">${item.question}</div>
+                        <div class="query-answer">${item.answer.substring(0, 100)}${item.answer.length > 100 ? '...' : ''}</div>
+                        <div class="query-meta">${new Date(item.timestamp).toLocaleString()}</div>
+                    </div>
+                    <div class="query-actions">
+                        <button class="btn btn-secondary" onclick="reuseQuery('${item.question.replace(/'/g, "\\'")}')">
+                            🔄
+                        </button>
+                        <button class="btn btn-danger" onclick="toggleFavorite(${item.id})">
+                            ⭐
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            favoritesList.innerHTML = favoritesHtml;
+        }
+
+        function toggleFavorite(queryId) {
+            const query = queryHistory.find(item => item.id === queryId);
+            if (query) {
+                query.isFavorite = !query.isFavorite;
+                localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+                displayQueryHistory();
+                displayFavorites();
+            }
+        }
+
+        function reuseQuery(question) {
+            // Switch to chat tab and populate the input
+            switchTab('chat');
+            document.getElementById('chatInput').value = question;
+            document.getElementById('chatInput').focus();
+        }
+
+        function deleteQuery(queryId) {
+            if (confirm('Are you sure you want to delete this query?')) {
+                queryHistory = queryHistory.filter(item => item.id !== queryId);
+                localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+                displayQueryHistory();
+                displayFavorites();
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all query history? This action cannot be undone.')) {
+                queryHistory = [];
+                localStorage.removeItem('queryHistory');
+                displayQueryHistory();
+                displayFavorites();
+            }
+        }
+
+        // API Documentation Functions
+        function loadApiDocumentation() {
+            // Update API tenant info
+            if (currentTenantInfo) {
+                document.getElementById('apiTenantName').textContent = currentTenantInfo.company_name;
+                document.getElementById('apiTenantDomain').textContent = currentTenantInfo.company_domain;
+                currentApiKey = currentTenantInfo.api_key;
+                document.getElementById('apiKeyDisplay').textContent = currentApiKey || 'No API key available';
+            } else {
+                document.getElementById('apiTenantName').textContent = 'No Tenant Selected';
+                document.getElementById('apiTenantDomain').textContent = 'Please select a tenant';
+                document.getElementById('apiKeyDisplay').textContent = 'No tenant selected - please select a tenant first';
+            }
+        }
+
+        function copyApiKey() {
+            if (currentApiKey) {
+                navigator.clipboard.writeText(currentApiKey).then(() => {
+                    alert('API key copied to clipboard!');
+                });
+            } else {
+                alert('No API key available for this tenant.');
+            }
+        }
+
+        // Initialize the interface
+        window.onload = function() {
+            initializeAuth();
+            
+            // Add form submit handler
+            document.getElementById('tenantForm').addEventListener('submit', registerTenant);
+            
+            // Add event listeners for history filters
+            document.getElementById('historyFilter').addEventListener('change', displayQueryHistory);
+            document.getElementById('historySort').addEventListener('change', displayQueryHistory);
+            document.getElementById('historySearch').addEventListener('input', displayQueryHistory);
+            
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const tenantModal = document.getElementById('tenantModal');
+                const tenantSelectorModal = document.getElementById('tenantSelectorModal');
+                
+                if (event.target === tenantModal) {
+                    closeTenantModal();
+                }
+                if (event.target === tenantSelectorModal) {
+                    closeTenantSelector();
+                }
+            }
+        };
+    </script>
+</body>
+</html>
