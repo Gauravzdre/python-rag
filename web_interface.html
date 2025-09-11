@@ -595,7 +595,7 @@
             <p>Manage multiple companies, upload documents, and chat with AI-powered insights</p>
             <div class="header-controls">
                 <button onclick="initializeAuth()">🔄 Refresh Connection</button>
-                <button onclick="showTenantModal()">➕ Add Tenant</button>
+                <button onclick="if(typeof showTenantModal === 'function') showTenantModal(); else console.error('showTenantModal not defined');">➕ Add Tenant</button>
             </div>
         </div>
 
@@ -617,7 +617,7 @@
                         <strong id="currentTenantName">No Tenant Selected</strong>
                         <div id="currentTenantDomain">Please select a tenant</div>
                     </div>
-                    <button class="btn btn-secondary" onclick="showTenantSelector()">Switch Tenant</button>
+                    <button class="btn btn-secondary" onclick="if(typeof showTenantSelector === 'function') showTenantSelector(); else console.error('showTenantSelector not defined');">Switch Tenant</button>
                 </div>
                 <div class="tenant-stats">
                     <div class="stat-card">
@@ -797,7 +797,7 @@
             <div class="main-content">
                 <div class="section">
                     <h2>🏢 Tenant Management</h2>
-                    <button class="btn" onclick="showTenantModal()">➕ Add New Tenant</button>
+                    <button class="btn" onclick="if(typeof showTenantModal === 'function') showTenantModal(); else console.error('showTenantModal not defined');">➕ Add New Tenant</button>
                     <div id="tenantManagementStatus"></div>
                 </div>
 
@@ -1100,10 +1100,10 @@
         function updateApiUrls() {
             document.getElementById('baseUrlDisplay').textContent = API_BASE_URL;
             document.getElementById('ragApiUrl').textContent = API_BASE_URL;
-            document.getElementById('docsLink').href = YOUR_DOMAIN/docs';
-            document.getElementById('docsLink').textContent = YOUR_DOMAIN/docs';
-            document.getElementById('healthLink').href = YOUR_DOMAIN/healthcheck';
-            document.getElementById('healthLink').textContent = YOUR_DOMAIN/healthcheck';
+            document.getElementById('docsLink').href = API_BASE_URL + '/docs';
+            document.getElementById('docsLink').textContent = API_BASE_URL + '/docs';
+            document.getElementById('healthLink').href = API_BASE_URL + '/healthcheck';
+            document.getElementById('healthLink').textContent = API_BASE_URL + '/healthcheck';
         }
 
         // Initialize auth token
@@ -2022,6 +2022,12 @@
         window.onload = function() {
             updateApiUrls();
             initializeAuth();
+            
+            // Ensure functions are available globally
+            window.showTenantModal = showTenantModal;
+            window.showTenantSelector = showTenantSelector;
+            window.closeTenantModal = closeTenantModal;
+            window.closeTenantSelector = closeTenantSelector;
             
             // Add form submit handler
             document.getElementById('tenantForm').addEventListener('submit', registerTenant);
