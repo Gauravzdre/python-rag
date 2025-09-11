@@ -600,12 +600,12 @@
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('chat')">💬 Chat</button>
-            <button class="nav-tab" onclick="switchTab('documents')">📄 Documents</button>
-            <button class="nav-tab" onclick="switchTab('history')">📝 History</button>
-            <button class="nav-tab" onclick="switchTab('tenants')">🏢 Tenants</button>
-            <button class="nav-tab" onclick="switchTab('analytics')">📊 Analytics</button>
-            <button class="nav-tab" onclick="switchTab('api')">📚 API Docs</button>
+            <button class="nav-tab active" onclick="if(typeof switchTab === 'function') switchTab('chat'); else console.error('switchTab not defined');">💬 Chat</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('documents'); else console.error('switchTab not defined');">📄 Documents</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('history'); else console.error('switchTab not defined');">📝 History</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('tenants'); else console.error('switchTab not defined');">🏢 Tenants</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('analytics'); else console.error('switchTab not defined');">📊 Analytics</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('api'); else console.error('switchTab not defined');">📚 API Docs</button>
         </div>
 
         <!-- Chat Tab -->
@@ -642,7 +642,7 @@
                         <label for="fileInput">Choose a file:</label>
                         <input type="file" id="fileInput" accept=".txt,.md,.pdf,.json,.csv" />
                     </div>
-                    <button class="btn" onclick="uploadDocument()">Upload Document</button>
+                    <button class="btn" onclick="if(typeof uploadDocument === 'function') uploadDocument(); else console.error('uploadDocument not defined');">Upload Document</button>
                     <div id="uploadStatus"></div>
                 </div>
 
@@ -676,8 +676,8 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <input type="text" id="chatInput" placeholder="Ask a question about your uploaded documents..." onkeypress="handleKeyPress(event)">
-                        <button class="btn" onclick="sendMessage()">Send</button>
+                        <input type="text" id="chatInput" placeholder="Ask a question about your uploaded documents..." onkeypress="if(typeof handleKeyPress === 'function') handleKeyPress(event); else console.error('handleKeyPress not defined');">
+                        <button class="btn" onclick="if(typeof sendMessage === 'function') sendMessage(); else console.error('sendMessage not defined');">Send</button>
                     </div>
                     <div id="chatStatus"></div>
                 </div>
@@ -693,7 +693,7 @@
                         <label for="docFileInput">Upload New Document:</label>
                         <input type="file" id="docFileInput" accept=".txt,.md,.pdf,.json,.csv" />
                     </div>
-                    <button class="btn" onclick="uploadDocumentFromTab()">Upload Document</button>
+                    <button class="btn" onclick="if(typeof uploadDocumentFromTab === 'function') uploadDocumentFromTab(); else console.error('uploadDocumentFromTab not defined');">Upload Document</button>
                     <div id="docUploadStatus"></div>
                 </div>
 
@@ -1083,6 +1083,12 @@
     </div>
 
     <script>
+        // Global error handler to prevent page breaking
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript Error:', e.error);
+            // Don't let errors break the page
+        });
+        
         let authToken = null;
         let currentResponseStyle = 'helpful';
         let customInstructions = '';
@@ -2028,6 +2034,11 @@
             window.showTenantSelector = showTenantSelector;
             window.closeTenantModal = closeTenantModal;
             window.closeTenantSelector = closeTenantSelector;
+            window.switchTab = switchTab;
+            window.handleKeyPress = handleKeyPress;
+            window.sendMessage = sendMessage;
+            window.uploadDocument = uploadDocument;
+            window.uploadDocumentFromTab = uploadDocumentFromTab;
             
             // Add form submit handler
             document.getElementById('tenantForm').addEventListener('submit', registerTenant);
