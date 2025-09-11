@@ -863,7 +863,7 @@
                     <div class="api-info">
                         <p><strong>API Key:</strong> <code id="apiKeyDisplay">Click "Copy API Key" to get your key</code></p>
                         <p><strong>Authorization Header:</strong> <code>Authorization: Bearer YOUR_API_KEY</code></p>
-                        <p><strong>Base URL:</strong> <code>${API_BASE_URL}</code></p>
+                        <p><strong>Base URL:</strong> <code id="baseUrlDisplay">Loading...</code></p>
                     </div>
                 </div>
 
@@ -873,7 +873,7 @@
                         <h3>POST /query</h3>
                         <p>Send a query to the RAG system</p>
                         <div class="code-block">
-                            <pre><code>curl -X POST "${API_BASE_URL}/query" \
+                            <pre><code>curl -X POST "YOUR_DOMAIN/query" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query": "What is the main topic of the document?"}'</code></pre>
@@ -884,7 +884,7 @@
                         <h3>POST /query/tenant</h3>
                         <p>Send a tenant-specific query</p>
                         <div class="code-block">
-                            <pre><code>curl -X POST "${API_BASE_URL}/query/tenant" \
+                            <pre><code>curl -X POST "YOUR_DOMAIN/query/tenant" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query": "What is the main topic?", "tenant_id": "your_tenant_id"}'</code></pre>
@@ -898,7 +898,7 @@
                         <h3>POST /upload</h3>
                         <p>Upload a document to the default tenant</p>
                         <div class="code-block">
-                            <pre><code>curl -X POST "${API_BASE_URL}/upload" \
+                            <pre><code>curl -X POST "YOUR_DOMAIN/upload" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F "file=@document.pdf"</code></pre>
                         </div>
@@ -908,7 +908,7 @@
                         <h3>POST /upload/tenant</h3>
                         <p>Upload a document to a specific tenant</p>
                         <div class="code-block">
-                            <pre><code>curl -X POST "${API_BASE_URL}/upload/tenant?tenant_id=your_tenant_id" \
+                            <pre><code>curl -X POST "YOUR_DOMAIN/upload/tenant?tenant_id=your_tenant_id" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F "file=@document.pdf"</code></pre>
                         </div>
@@ -918,7 +918,7 @@
                         <h3>GET /tenants/{tenant_id}/documents</h3>
                         <p>Get all documents for a tenant</p>
                         <div class="code-block">
-                            <pre><code>curl -X GET "${API_BASE_URL}/tenants/your_tenant_id/documents" \
+                            <pre><code>curl -X GET "YOUR_DOMAIN/tenants/your_tenant_id/documents" \
   -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
                         </div>
                     </div>
@@ -930,7 +930,7 @@
                         <h3>GET /tenants/</h3>
                         <p>List all tenants</p>
                         <div class="code-block">
-                            <pre><code>curl -X GET "${API_BASE_URL}/tenants/" \
+                            <pre><code>curl -X GET "YOUR_DOMAIN/tenants/" \
   -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
                         </div>
                     </div>
@@ -939,7 +939,7 @@
                         <h3>GET /tenants/{tenant_id}</h3>
                         <p>Get specific tenant information</p>
                         <div class="code-block">
-                            <pre><code>curl -X GET "${API_BASE_URL}/tenants/your_tenant_id" \
+                            <pre><code>curl -X GET "YOUR_DOMAIN/tenants/your_tenant_id" \
   -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
                         </div>
                     </div>
@@ -948,7 +948,7 @@
                         <h3>GET /collection-info</h3>
                         <p>Get collection information for current tenant</p>
                         <div class="code-block">
-                            <pre><code>curl -X GET "${API_BASE_URL}/collection-info?tenant_id=your_tenant_id" \
+                            <pre><code>curl -X GET "YOUR_DOMAIN/collection-info?tenant_id=your_tenant_id" \
   -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
                         </div>
                     </div>
@@ -1073,9 +1073,9 @@
 
         <div class="api-info">
             <h3>🔗 API Information</h3>
-            <p><strong>RAG API:</strong> ${API_BASE_URL}</p>
-            <p><strong>Documentation:</strong> <a href="${API_BASE_URL}/docs" target="_blank">${API_BASE_URL}/docs</a></p>
-            <p><strong>Health Check:</strong> <a href="${API_BASE_URL}/healthcheck" target="_blank">${API_BASE_URL}/healthcheck</a></p>
+            <p><strong>RAG API:</strong> <span id="ragApiUrl">Loading...</span></p>
+            <p><strong>Documentation:</strong> <a href="#" id="docsLink" target="_blank">Loading...</a></p>
+            <p><strong>Health Check:</strong> <a href="#" id="healthLink" target="_blank">Loading...</a></p>
         </div>
     </div>
 
@@ -1091,19 +1091,30 @@
         
         // Get the current API base URL
         const API_BASE_URL = window.location.origin;
+        console.log('API_BASE_URL:', API_BASE_URL); // Debug log
+        
+        // Update API URLs in the interface
+        function updateApiUrls() {
+            document.getElementById('baseUrlDisplay').textContent = API_BASE_URL;
+            document.getElementById('ragApiUrl').textContent = API_BASE_URL;
+            document.getElementById('docsLink').href = YOUR_DOMAIN/docs';
+            document.getElementById('docsLink').textContent = YOUR_DOMAIN/docs';
+            document.getElementById('healthLink').href = YOUR_DOMAIN/healthcheck';
+            document.getElementById('healthLink').textContent = YOUR_DOMAIN/healthcheck';
+        }
 
         // Initialize auth token
         async function initializeAuth() {
             try {
                 // First check if API is running
-                const healthResponse = await fetch(`${API_BASE_URL}/healthcheck`);
+                const healthResponse = await fetch(YOUR_DOMAIN/healthcheck');
                 if (!healthResponse.ok) {
                     addMessage('system', '❌ Failed to connect to RAG API. Make sure the server is running.');
                     return;
                 }
                 
                 // Get a valid JWT token from the API
-                const tokenResponse = await fetch(`${API_BASE_URL}/get-token`);
+                const tokenResponse = await fetch(YOUR_DOMAIN/get-token');
                 if (tokenResponse.ok) {
                     const tokenData = await tokenResponse.json();
                     authToken = tokenData.token;
@@ -1187,7 +1198,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
                 
-                const url = `${API_BASE_URL}/upload/tenant?tenant_id=${currentTenantId}`;
+                const url = YOUR_DOMAIN/upload/tenant?tenant_id=' + currentTenantId;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1237,7 +1248,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">Uploading document...</div>';
                 
-                const url = `${API_BASE_URL}/upload/tenant?tenant_id=${currentTenantId}`;
+                const url = YOUR_DOMAIN/upload/tenant?tenant_id=' + currentTenantId;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1317,7 +1328,7 @@
             try {
                 statusDiv.innerHTML = '<div class="status info">🤔 Thinking...</div>';
                 
-                const url = '${API_BASE_URL}/query/tenant';
+                const url = YOUR_DOMAIN/query/tenant';
                 const body = { query: message, tenant_id: currentTenantId };
                 
                 const response = await fetch(url, {
@@ -1365,7 +1376,7 @@
             if (!authToken) return;
 
             try {
-                const response = await fetch('${API_BASE_URL}/tenants/', {
+                const response = await fetch(YOUR_DOMAIN/tenants/', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1387,7 +1398,7 @@
             if (!authToken) return;
 
             try {
-                const response = await fetch('${API_BASE_URL}/tenants/', {
+                const response = await fetch(YOUR_DOMAIN/tenants/', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1458,7 +1469,7 @@
             if (!authToken) return null;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
+                const response = await fetch(YOUR_DOMAIN/tenants/' + tenantId, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1478,7 +1489,7 @@
             if (!authToken || !currentTenantId) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/collection-info?tenant_id=${currentTenantId}`, {
+                const response = await fetch(YOUR_DOMAIN/collection-info?tenant_id=' + currentTenantId, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1500,7 +1511,7 @@
             if (!authToken || !currentTenantId) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/tenants/${currentTenantId}/documents`, {
+                const response = await fetch(YOUR_DOMAIN/tenants/' + currentTenantId + '/documents', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -1545,7 +1556,7 @@
 
             try {
                 const [tenantsResponse, totalStats] = await Promise.all([
-                    fetch('${API_BASE_URL}/tenants/', {
+                    fetch('YOUR_DOMAIN/tenants/', {
                         headers: { 'Authorization': `Bearer ${authToken}` }
                     }),
                     // You could add a total stats endpoint here
@@ -1644,7 +1655,7 @@
             };
 
             try {
-                const response = await fetch('${API_BASE_URL}/tenants/register', {
+                const response = await fetch(YOUR_DOMAIN/tenants/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1674,7 +1685,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
+                const response = await fetch(YOUR_DOMAIN/tenants/' + tenantId, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -1706,7 +1717,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/tenants/${currentTenantId}/documents/${documentId}`, {
+                const response = await fetch(YOUR_DOMAIN/tenants/' + currentTenantId + '/documents/' + documentId, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -1751,7 +1762,7 @@
                 }
                 
                 // Use the query endpoint to search documents
-                const url = '${API_BASE_URL}/query/tenant';
+                const url = YOUR_DOMAIN/query/tenant';
                 const body = { query: query, tenant_id: currentTenantId };
                 
                 const response = await fetch(url, {
@@ -2006,6 +2017,7 @@
 
         // Initialize the interface
         window.onload = function() {
+            updateApiUrls();
             initializeAuth();
             
             // Add form submit handler
