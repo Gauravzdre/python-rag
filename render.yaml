@@ -9,5 +9,7 @@ services:
         value: 3.11.0
       - key: OPENROUTER_API_KEY
         sync: false  # Set this in Render dashboard
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_b8wgFRi6fOTZ@ep-lively-haze-adxb4l5a-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
     healthCheckPath: /healthcheck
     plan: free

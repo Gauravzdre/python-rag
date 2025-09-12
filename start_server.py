@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 def initialize_database():
     """Initialize database on startup"""
     try:
-        from app.database import db_manager
+        from app.postgres_database import postgres_manager
         
         # Initialize database
-        db_manager.init_database()
+        postgres_manager.init_database()
         
         # Check for JSON files and migrate if they exist
         json_files = {
@@ -32,14 +32,14 @@ def initialize_database():
         json_files_exist = any(os.path.exists(path) for path in json_files.values())
         
         if json_files_exist:
-            logger.info("JSON files detected, migrating to database...")
-            success = db_manager.migrate_from_json(json_files)
+            logger.info("JSON files detected, migrating to PostgreSQL...")
+            success = postgres_manager.migrate_from_json(json_files)
             if success:
                 logger.info("Migration completed successfully!")
             else:
                 logger.error("Migration failed!")
         else:
-            logger.info("Database initialized successfully")
+            logger.info("PostgreSQL database initialized successfully")
             
         return True
     except Exception as e:
@@ -54,9 +54,9 @@ if __name__ == "__main__":
     print("=" * 50)
     
     # Initialize database
-    print("🗄️  Initializing database...")
+    print("🗄️  Initializing PostgreSQL database...")
     if initialize_database():
-        print("✅ Database ready!")
+        print("✅ PostgreSQL database ready!")
     else:
         print("❌ Database initialization failed!")
         sys.exit(1)

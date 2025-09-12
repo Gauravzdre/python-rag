@@ -6,6 +6,10 @@ httpx
 python-jose[cryptography]
 email-validator>=2.0.0
 
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+
 # Advanced RAG Dependencies (OpenRouter-based, cost-effective)
 langchain==0.3.0
 langchain-core==0.3.0

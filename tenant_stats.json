@@ -41,5 +41,15 @@
     "document_types": {
       "text": 1
     }
+  },
+  "omegagaze": {
+    "total_documents": 1,
+    "total_queries": 0,
+    "queries_today": 0,
+    "last_query_date": null,
+    "popular_queries": [],
+    "document_types": {
+      "text": 1
+    }
   }
 }

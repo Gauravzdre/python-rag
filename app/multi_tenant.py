@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime
 import logging
 
-from app.database import db_manager
+from app.postgres_database import postgres_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,8 +36,8 @@ class MultiTenantRAG:
         json_files_exist = any(os.path.exists(path) for path in json_files.values())
         
         if json_files_exist:
-            logger.info("JSON files detected, migrating to database...")
-            db_manager.migrate_from_json(json_files)
+            logger.info("JSON files detected, migrating to PostgreSQL...")
+            postgres_manager.migrate_from_json(json_files)
             
             # Optionally backup and remove JSON files after successful migration
             # Uncomment the following lines if you want to remove JSON files after migration
@@ -79,7 +79,7 @@ class MultiTenantRAG:
             }
         }
         
-        success = db_manager.add_tenant(tenant_id, tenant_data)
+        success = postgres_manager.add_tenant(tenant_id, tenant_data)
         
         if success:
             logger.info(f"New tenant added: {tenant_id} - {config.get('company_name')}")
@@ -96,30 +96,30 @@ class MultiTenantRAG:
     
     def get_tenant(self, tenant_id: str) -> Dict:
         """Get tenant configuration"""
-        return db_manager.get_tenant(tenant_id) or {}
+        return postgres_manager.get_tenant(tenant_id) or {}
     
     def list_tenants(self) -> List[Dict]:
         """List all tenants with basic info"""
-        return db_manager.list_tenants()
+        return postgres_manager.list_tenants()
     
     def update_tenant(self, tenant_id: str, updates: Dict) -> bool:
         """Update tenant configuration"""
-        return db_manager.update_tenant(tenant_id, updates)
+        return postgres_manager.update_tenant(tenant_id, updates)
     
     def delete_tenant(self, tenant_id: str) -> bool:
         """Delete a tenant and all associated data"""
-        return db_manager.delete_tenant(tenant_id)
+        return postgres_manager.delete_tenant(tenant_id)
     
     def add_document(self, tenant_id: str, filename: str, content: str, file_type: str = "text"):
         """Add document to tenant with enhanced tracking"""
         # Check if tenant exists
-        tenant = db_manager.get_tenant(tenant_id)
+        tenant = postgres_manager.get_tenant(tenant_id)
         if not tenant:
             return False
         
         # Check document limit
         max_docs = tenant.get("max_documents", 100)
-        current_docs = len(db_manager.get_tenant_documents(tenant_id))
+        current_docs = len(postgres_manager.get_tenant_documents(tenant_id))
         if current_docs >= max_docs:
             logger.warning(f"Tenant {tenant_id} has reached document limit")
             return False
@@ -133,27 +133,27 @@ class MultiTenantRAG:
             "chunks": [content[i:i+1000] for i in range(0, len(content), 800)]
         }
         
-        return db_manager.add_document(tenant_id, document)
+        return postgres_manager.add_document(tenant_id, document)
     
     def get_tenant_documents(self, tenant_id: str) -> List[Dict]:
         """Get all documents for a tenant"""
-        return db_manager.get_tenant_documents(tenant_id)
+        return postgres_manager.get_tenant_documents(tenant_id)
     
     def delete_document(self, tenant_id: str, document_id: str) -> bool:
         """Delete a specific document from tenant"""
-        return db_manager.delete_document(tenant_id, document_id)
+        return postgres_manager.delete_document(tenant_id, document_id)
     
     def search_documents(self, tenant_id: str, query: str) -> List[Dict]:
         """Search documents for a tenant with enhanced relevance"""
-        return db_manager.search_documents(tenant_id, query)
+        return postgres_manager.search_documents(tenant_id, query)
     
     def get_tenant_stats(self, tenant_id: str) -> Dict:
         """Get comprehensive statistics for a tenant"""
-        return db_manager.get_tenant_stats(tenant_id) or {}
+        return postgres_manager.get_tenant_stats(tenant_id) or {}
     
     def record_query(self, tenant_id: str, query: str) -> bool:
         """Record a query for analytics"""
-        return db_manager.record_query(tenant_id, query)
+        return postgres_manager.record_query(tenant_id, query)
 
 # Global instance
 multi_tenant_rag = MultiTenantRAG()

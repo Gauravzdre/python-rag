@@ -9,7 +9,7 @@ from app.rag_advanced import process_query, process_document_upload, advanced_ra
 from app.rag_multi_tenant import multi_tenant_rag_engine
 from app.tenant_api import router as tenant_router
 from app.multi_tenant import multi_tenant_rag
-from app.auth import verify_token
+from app.auth import verify_token, verify_auth
 
 class QueryRequest(BaseModel):
     query: str
@@ -66,7 +66,13 @@ async def ask_question(request: QueryRequest, token: HTTPAuthorizationCredential
 @app.post("/query/tenant")
 async def ask_question_tenant(request: TenantQueryRequest, token: HTTPAuthorizationCredentials = Depends(security)):
     """Tenant-specific query endpoint"""
-    verify_token(token)
+    auth_info = verify_auth(token)
+    
+    # If using tenant API key, verify the tenant_id matches
+    if auth_info.get("auth_type") == "tenant_api_key":
+        if auth_info.get("tenant_id") != request.tenant_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant ID mismatch")
+    
     response = await multi_tenant_rag_engine.process_query(request.tenant_id, request.query)
     return response
 
@@ -94,7 +100,13 @@ async def upload_doc_tenant(
     token: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Tenant-specific upload endpoint"""
-    verify_token(token)
+    auth_info = verify_auth(token)
+    
+    # If using tenant API key, verify the tenant_id matches
+    if auth_info.get("auth_type") == "tenant_api_key":
+        if auth_info.get("tenant_id") != tenant_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant ID mismatch")
+    
     result = multi_tenant_rag_engine.process_document_upload(tenant_id, file)
     return result
 
@@ -117,16 +129,58 @@ def get_token():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"token": token}
 
+# Tenant-specific endpoints (no admin access required)
+
+@app.get("/tenants/{tenant_id}/documents")
+async def get_tenant_documents(
+    tenant_id: str,
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all documents for a tenant"""
+    auth_info = verify_auth(token)
+    
+    # If using tenant API key, verify the tenant_id matches
+    if auth_info.get("auth_type") == "tenant_api_key":
+        if auth_info.get("tenant_id") != tenant_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant ID mismatch")
+    
+    documents = multi_tenant_rag.get_tenant_documents(tenant_id)
+    
+    return {
+        "tenant_id": tenant_id,
+        "documents": documents,
+        "total_count": len(documents)
+    }
+
 @app.get("/collection-info")
-def get_collection_info(
+async def get_collection_info(
     tenant_id: str = Query("default"),
     token: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Get information about the current document collection"""
-    verify_token(token)
+    auth_info = verify_auth(token)
+    
+    # If using tenant API key, verify the tenant_id matches
+    if auth_info.get("auth_type") == "tenant_api_key":
+        if auth_info.get("tenant_id") != tenant_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant ID mismatch")
     
     if tenant_id != "default":
-        return multi_tenant_rag_engine.get_tenant_collection_info(tenant_id)
+        # Get tenant info
+        tenant = multi_tenant_rag.get_tenant(tenant_id)
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+        
+        # Get documents count
+        documents = multi_tenant_rag.get_tenant_documents(tenant_id)
+        
+        return {
+            "tenant_id": tenant_id,
+            "company_name": tenant.get("company_name"),
+            "document_count": len(documents),
+            "max_documents": tenant.get("max_documents", 100),
+            "plan": tenant.get("plan", "basic")
+        }
     else:
         return advanced_rag.get_collection_info()
 
