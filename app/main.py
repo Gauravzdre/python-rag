@@ -131,15 +131,21 @@ def debug_tenants(token: HTTPAuthorizationCredentials = Depends(security)):
         # Get all tenants
         tenants = multi_tenant_rag.list_tenants()
         
-        # Check for specific tenant
+        # Check for specific tenant with different possible IDs
         omegagaze_tenant = multi_tenant_rag.get_tenant("omegagaze_com")
+        omegagaze_tenant2 = multi_tenant_rag.get_tenant("omegagaze")
+        omegagaze_tenant3 = multi_tenant_rag.get_tenant("omegagaze_online")
         
         return {
             "database_type": db_type,
             "total_tenants": len(tenants),
             "tenants": tenants,
-            "omegagaze_exists": omegagaze_tenant is not None,
-            "omegagaze_data": omegagaze_tenant
+            "omegagaze_com_exists": omegagaze_tenant is not None,
+            "omegagaze_exists": omegagaze_tenant2 is not None,
+            "omegagaze_online_exists": omegagaze_tenant3 is not None,
+            "omegagaze_com_data": omegagaze_tenant,
+            "omegagaze_data": omegagaze_tenant2,
+            "omegagaze_online_data": omegagaze_tenant3
         }
     except Exception as e:
         return {"error": str(e)}
