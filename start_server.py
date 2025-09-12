@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 def initialize_database():
     """Initialize database on startup"""
     try:
-        from app.postgres_database import postgres_manager
+        try:
+            from app.postgres_database import postgres_manager
+        except Exception:
+            from app.simple_postgres import simple_postgres_manager as postgres_manager
         
         # Initialize database
         postgres_manager.init_database()

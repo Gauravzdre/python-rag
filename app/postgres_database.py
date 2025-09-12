@@ -8,7 +8,7 @@ import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
-from sqlalchemy import create_engine, text, MetaData, Table, Column, String, Integer, DateTime, Text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -25,7 +25,6 @@ class PostgreSQLManager:
         # Create engine and session
         self.engine = create_engine(self.database_url, echo=False)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.metadata = MetaData()
         
         # Initialize tables
         self.init_database()
@@ -37,50 +36,69 @@ class PostgreSQLManager:
     def init_database(self):
         """Initialize database tables"""
         try:
-            # Define tables
-            tenants_table = Table(
-                'tenants', self.metadata,
-                Column('tenant_id', String(255), primary_key=True),
-                Column('company_name', String(255), nullable=False),
-                Column('company_domain', String(255), unique=True, nullable=False),
-                Column('company_email', String(255), nullable=False),
-                Column('company_phone', String(50)),
-                Column('api_key', String(255), unique=True, nullable=False),
-                Column('jwt_secret', String(255), nullable=False),
-                Column('status', String(50), default='active'),
-                Column('plan', String(50), default='basic'),
-                Column('max_documents', Integer, default=100),
-                Column('max_queries_per_day', Integer, default=1000),
-                Column('created_at', DateTime, nullable=False),
-                Column('updated_at', DateTime, nullable=False),
-                Column('settings', Text)  # JSON string
-            )
-            
-            tenant_documents_table = Table(
-                'tenant_documents', self.metadata,
-                Column('document_id', String(255), primary_key=True),
-                Column('tenant_id', String(255), nullable=False),
-                Column('filename', String(255), nullable=False),
-                Column('content', Text, nullable=False),
-                Column('file_type', String(50), default='text'),
-                Column('upload_time', DateTime, nullable=False),
-                Column('chunks', Text)  # JSON string
-            )
-            
-            tenant_stats_table = Table(
-                'tenant_stats', self.metadata,
-                Column('tenant_id', String(255), primary_key=True),
-                Column('total_documents', Integer, default=0),
-                Column('total_queries', Integer, default=0),
-                Column('queries_today', Integer, default=0),
-                Column('last_query_date', DateTime),
-                Column('popular_queries', Text),  # JSON string
-                Column('document_types', Text)    # JSON string
-            )
-            
-            # Create tables
-            self.metadata.create_all(self.engine)
-            logger.info("PostgreSQL database initialized successfully")
+            with self.get_session() as session:
+                # Create tenants table
+                session.execute(text("""
+                    CREATE TABLE IF NOT EXISTS tenants (
+                        tenant_id VARCHAR(255) PRIMARY KEY,
+                        company_name VARCHAR(255) NOT NULL,
+                        company_domain VARCHAR(255) UNIQUE NOT NULL,
+                        company_email VARCHAR(255) NOT NULL,
+                        company_phone VARCHAR(50),
+                        api_key VARCHAR(255) UNIQUE NOT NULL,
+                        jwt_secret VARCHAR(255) NOT NULL,
+                        status VARCHAR(50) DEFAULT 'active',
+                        plan VARCHAR(50) DEFAULT 'basic',
+                        max_documents INTEGER DEFAULT 100,
+                        max_queries_per_day INTEGER DEFAULT 1000,
+                        created_at TIMESTAMP NOT NULL,
+                        updated_at TIMESTAMP NOT NULL,
+                        settings TEXT
+                    )
+                """))
+                
+                # Create tenant_documents table
+                session.execute(text("""
+                    CREATE TABLE IF NOT EXISTS tenant_documents (
+                        document_id VARCHAR(255) PRIMARY KEY,
+                        tenant_id VARCHAR(255) NOT NULL,
+                        filename VARCHAR(255) NOT NULL,
+                        content TEXT NOT NULL,
+                        file_type VARCHAR(50) DEFAULT 'text',
+                        upload_time TIMESTAMP NOT NULL,
+                        chunks TEXT
+                    )
+                """))
+                
+                # Create tenant_stats table
+                session.execute(text("""
+                    CREATE TABLE IF NOT EXISTS tenant_stats (
+                        tenant_id VARCHAR(255) PRIMARY KEY,
+                        total_documents INTEGER DEFAULT 0,
+                        total_queries INTEGER DEFAULT 0,
+                        queries_today INTEGER DEFAULT 0,
+                        last_query_date TIMESTAMP,
+                        popular_queries TEXT,
+                        document_types TEXT
+                    )
+                """))
+                
+                # Create indexes for better performance
+                session.execute(text("""
+                    CREATE INDEX IF NOT EXISTS idx_tenant_domain ON tenants (company_domain)
+                """))
+                session.execute(text("""
+                    CREATE INDEX IF NOT EXISTS idx_tenant_api_key ON tenants (api_key)
+                """))
+                session.execute(text("""
+                    CREATE INDEX IF NOT EXISTS idx_documents_tenant ON tenant_documents (tenant_id)
+                """))
+                session.execute(text("""
+                    CREATE INDEX IF NOT EXISTS idx_documents_upload_time ON tenant_documents (upload_time)
+                """))
+                
+                session.commit()
+                logger.info("PostgreSQL database initialized successfully")
             
         except Exception as e:
             logger.error(f"Error initializing PostgreSQL database: {e}")

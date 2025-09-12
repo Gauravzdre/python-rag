@@ -17,7 +17,10 @@ def verify_token(credentials):
 def verify_tenant_api_key(credentials) -> Optional[Dict]:
     """Verify tenant API key and return tenant info"""
     try:
-        from app.postgres_database import postgres_manager
+        try:
+            from app.postgres_database import postgres_manager
+        except Exception:
+            from app.simple_postgres import simple_postgres_manager as postgres_manager
         
         # Extract API key from Bearer token
         api_key = credentials.credentials
