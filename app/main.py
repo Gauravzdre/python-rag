@@ -114,6 +114,36 @@ async def upload_doc_tenant(
 def healthcheck():
     return {"status": "ok"}
 
+@app.get("/debug/tenants")
+def debug_tenants(token: HTTPAuthorizationCredentials = Depends(security)):
+    """Debug endpoint to check tenant data"""
+    verify_token(token)
+    
+    try:
+        # Check which database manager is being used
+        try:
+            from app.postgres_database import postgres_manager
+            db_type = "SQLAlchemy PostgreSQL"
+        except Exception:
+            from app.simple_postgres import simple_postgres_manager as postgres_manager
+            db_type = "Simple PostgreSQL"
+        
+        # Get all tenants
+        tenants = multi_tenant_rag.list_tenants()
+        
+        # Check for specific tenant
+        omegagaze_tenant = multi_tenant_rag.get_tenant("omegagaze_com")
+        
+        return {
+            "database_type": db_type,
+            "total_tenants": len(tenants),
+            "tenants": tenants,
+            "omegagaze_exists": omegagaze_tenant is not None,
+            "omegagaze_data": omegagaze_tenant
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/get-token")
 def get_token():
     """Generate a JWT token for web interface testing"""

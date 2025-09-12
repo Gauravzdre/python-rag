@@ -87,9 +87,12 @@ async def register_tenant(
     try:
         # Generate tenant ID from company domain
         tenant_id = tenant_data.company_domain.replace(".", "_").replace("-", "_").lower()
+        logger.info(f"Generated tenant_id: {tenant_id} from domain: {tenant_data.company_domain}")
         
         # Check if tenant already exists
-        if multi_tenant_rag.get_tenant(tenant_id):
+        existing_tenant = multi_tenant_rag.get_tenant(tenant_id)
+        if existing_tenant:
+            logger.warning(f"Tenant {tenant_id} already exists: {existing_tenant.get('company_name')}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Tenant with domain {tenant_data.company_domain} already exists"
@@ -137,7 +140,14 @@ async def list_tenants(
 ):
     """List all tenants"""
     try:
+        logger.info("Attempting to list tenants...")
         tenants = multi_tenant_rag.list_tenants()
+        logger.info(f"Retrieved {len(tenants)} tenants from database")
+        
+        # Log each tenant for debugging
+        for tenant in tenants:
+            logger.info(f"Tenant: {tenant.get('tenant_id')} - {tenant.get('company_name')}")
+        
         return TenantListResponse(
             tenants=tenants,
             total_count=len(tenants)
