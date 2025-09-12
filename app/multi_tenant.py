@@ -12,16 +12,16 @@ from pathlib import Path
 from datetime import datetime
 import logging
 
+# Configure logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 try:
     from app.postgres_database import postgres_manager
     logger.info("Using SQLAlchemy PostgreSQL manager")
 except Exception as e:
     logger.warning(f"SQLAlchemy PostgreSQL failed, falling back to simple PostgreSQL: {e}")
     from app.simple_postgres import simple_postgres_manager as postgres_manager
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class MultiTenantRAG:
     def __init__(self):
