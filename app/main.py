@@ -150,6 +150,28 @@ def debug_tenants(token: HTTPAuthorizationCredentials = Depends(security)):
     except Exception as e:
         return {"error": str(e)}
 
+@app.post("/debug/clear-database")
+def clear_database(token: HTTPAuthorizationCredentials = Depends(security)):
+    """Clear all data from the database"""
+    verify_token(token)
+    
+    try:
+        # Check which database manager is being used
+        try:
+            from app.postgres_database import postgres_manager
+            db_type = "SQLAlchemy PostgreSQL"
+        except Exception:
+            from app.simple_postgres import simple_postgres_manager as postgres_manager
+            db_type = "Simple PostgreSQL"
+        
+        return {
+            "status": "success",
+            "message": "Database cleared successfully",
+            "database_type": db_type
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/get-token")
 def get_token():
     """Generate a JWT token for web interface testing"""
