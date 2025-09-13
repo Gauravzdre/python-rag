@@ -87,12 +87,18 @@ class MultiTenantRAGEngine:
             
             # Get the newly uploaded document to count its chunks
             documents = multi_tenant_rag.get_tenant_documents(tenant_id)
+            logger.info(f"Retrieved {len(documents)} documents for tenant {tenant_id}")
+            
             # Find the most recent document (should be the one we just uploaded)
             if documents:
                 latest_doc = max(documents, key=lambda x: x.get("upload_time", ""))
-                chunk_count = len(latest_doc.get("chunks", []))
+                chunks = latest_doc.get("chunks", [])
+                chunk_count = len(chunks)
+                logger.info(f"Latest document: {latest_doc.get('filename')}, chunks: {chunk_count}")
+                logger.info(f"Chunks data type: {type(chunks)}, first chunk: {chunks[0] if chunks else 'None'}")
             else:
                 chunk_count = 0
+                logger.warning(f"No documents found for tenant {tenant_id}")
             
             logger.info(f"Document processed for tenant {tenant_id}: {file.filename} - {chunk_count} chunks")
             

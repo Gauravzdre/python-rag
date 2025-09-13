@@ -249,7 +249,9 @@ class SimplePostgreSQLManager:
             with self.get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Convert chunks to JSON string
-                    chunks_json = json.dumps(document_data.get("chunks", []))
+                    chunks = document_data.get("chunks", [])
+                    chunks_json = json.dumps(chunks)
+                    logger.info(f"Storing document {document_data.get('filename')} with {len(chunks)} chunks")
                     
                     cursor.execute("""
                         INSERT INTO tenant_documents (
@@ -312,7 +314,9 @@ class SimplePostgreSQLManager:
                     documents = []
                     for row in cursor.fetchall():
                         doc_data = dict(row)
-                        doc_data["chunks"] = json.loads(doc_data["chunks"] or "[]")
+                        chunks_json = doc_data.get("chunks", "[]")
+                        doc_data["chunks"] = json.loads(chunks_json or "[]")
+                        logger.info(f"Retrieved document {doc_data.get('filename')} with {len(doc_data['chunks'])} chunks")
                         documents.append(doc_data)
                     
                     return documents

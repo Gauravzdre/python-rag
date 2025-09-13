@@ -322,7 +322,9 @@ class PostgreSQLManager:
         try:
             with self.get_session() as session:
                 # Convert chunks to JSON string
-                chunks_json = json.dumps(document_data.get("chunks", []))
+                chunks = document_data.get("chunks", [])
+                chunks_json = json.dumps(chunks)
+                logger.info(f"Storing document {document_data.get('filename')} with {len(chunks)} chunks")
                 
                 session.execute(text("""
                     INSERT INTO tenant_documents (
@@ -384,7 +386,9 @@ class PostgreSQLManager:
                 documents = []
                 for row in result:
                     doc_data = dict(row._mapping)
-                    doc_data["chunks"] = json.loads(doc_data["chunks"] or "[]")
+                    chunks_json = doc_data.get("chunks", "[]")
+                    doc_data["chunks"] = json.loads(chunks_json or "[]")
+                    logger.info(f"Retrieved document {doc_data.get('filename')} with {len(doc_data['chunks'])} chunks")
                     documents.append(doc_data)
                 
                 return documents
