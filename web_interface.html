@@ -594,18 +594,18 @@
             <h1>🏢 Multi-Tenant RAG Chatbot</h1>
             <p>Manage multiple companies, upload documents, and chat with AI-powered insights</p>
             <div class="header-controls">
-                <button onclick="initializeAuth()">🔄 Refresh Connection</button>
-                <button onclick="if(typeof showTenantModal === 'function') showTenantModal(); else console.error('showTenantModal not defined');">➕ Add Tenant</button>
+                <button onclick="refreshConnection()">🔄 Refresh Connection</button>
+                <button onclick="if(typeof showTenantModal === 'function') showTenantModal(); else alert('Please refresh the page to reload functions.');">➕ Add Tenant</button>
             </div>
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="if(typeof switchTab === 'function') switchTab('chat'); else console.error('switchTab not defined');">💬 Chat</button>
-            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('documents'); else console.error('switchTab not defined');">📄 Documents</button>
-            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('history'); else console.error('switchTab not defined');">📝 History</button>
-            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('tenants'); else console.error('switchTab not defined');">🏢 Tenants</button>
-            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('analytics'); else console.error('switchTab not defined');">📊 Analytics</button>
-            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('api'); else console.error('switchTab not defined');">📚 API Docs</button>
+            <button class="nav-tab active" onclick="if(typeof switchTab === 'function') switchTab('chat'); else alert('Please refresh the page to reload functions.');">💬 Chat</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('documents'); else alert('Please refresh the page to reload functions.');">📄 Documents</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('history'); else alert('Please refresh the page to reload functions.');">📝 History</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('tenants'); else alert('Please refresh the page to reload functions.');">🏢 Tenants</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('analytics'); else alert('Please refresh the page to reload functions.');">📊 Analytics</button>
+            <button class="nav-tab" onclick="if(typeof switchTab === 'function') switchTab('api'); else alert('Please refresh the page to reload functions.');">📚 API Docs</button>
         </div>
 
         <!-- Chat Tab -->
@@ -617,7 +617,7 @@
                         <strong id="currentTenantName">No Tenant Selected</strong>
                         <div id="currentTenantDomain">Please select a tenant</div>
                     </div>
-                    <button class="btn btn-secondary" onclick="if(typeof showTenantSelector === 'function') showTenantSelector(); else console.error('showTenantSelector not defined');">Switch Tenant</button>
+                    <button class="btn btn-secondary" onclick="if(typeof showTenantSelector === 'function') showTenantSelector(); else alert('Please refresh the page to reload functions.');">Switch Tenant</button>
                 </div>
                 <div class="tenant-stats">
                     <div class="stat-card">
@@ -642,7 +642,7 @@
                         <label for="fileInput">Choose a file:</label>
                         <input type="file" id="fileInput" accept=".txt,.md,.pdf,.json,.csv" />
                     </div>
-                    <button class="btn" onclick="if(typeof uploadDocument === 'function') uploadDocument(); else console.error('uploadDocument not defined');">Upload Document</button>
+                    <button class="btn" onclick="if(typeof uploadDocument === 'function') uploadDocument(); else alert('Please refresh the page to reload functions.');">Upload Document</button>
                     <div id="uploadStatus"></div>
                 </div>
 
@@ -676,8 +676,8 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <input type="text" id="chatInput" placeholder="Ask a question about your uploaded documents..." onkeypress="if(typeof handleKeyPress === 'function') handleKeyPress(event); else console.error('handleKeyPress not defined');">
-                        <button class="btn" onclick="if(typeof sendMessage === 'function') sendMessage(); else console.error('sendMessage not defined');">Send</button>
+                        <input type="text" id="chatInput" placeholder="Ask a question about your uploaded documents..." onkeypress="if(typeof handleKeyPress === 'function') handleKeyPress(event); else alert('Please refresh the page to reload functions.');">
+                        <button class="btn" onclick="if(typeof sendMessage === 'function') sendMessage(); else alert('Please refresh the page to reload functions.');">Send</button>
                     </div>
                     <div id="chatStatus"></div>
                 </div>
@@ -1119,7 +1119,7 @@
                 const healthResponse = await fetch(API_BASE_URL + '/healthcheck');
                 if (!healthResponse.ok) {
                     addMessage('system', '❌ Failed to connect to RAG API. Make sure the server is running.');
-                    return;
+                    return false;
                 }
                 
                 // Get a valid JWT token from the API
@@ -1128,18 +1128,31 @@
                     const tokenData = await tokenResponse.json();
                     authToken = tokenData.token;
                     addMessage('system', '✅ Connected to RAG API successfully! Ready to upload documents and chat.');
+                    
+                    // Load tenants and set up initial state
                     await loadTenants();
+                    
                     // Set first tenant as current if none selected
                     if (!currentTenantId) {
                         await setFirstTenantAsCurrent();
                     }
+                    
+                    // Update tenant stats
                     await updateTenantStats();
+                    
+                    // Load query history from localStorage
+                    loadQueryHistory();
+                    
+                    return true;
                 } else {
                     const errorText = await tokenResponse.text();
                     addMessage('system', `❌ Failed to get authentication token. Status: ${tokenResponse.status}, Error: ${errorText}`);
+                    return false;
                 }
             } catch (error) {
+                console.error('Auth initialization error:', error);
                 addMessage('system', '❌ Cannot connect to RAG API. Please start the server first.');
+                return false;
             }
         }
 
@@ -1334,11 +1347,21 @@
             addMessage('user', message);
             chatInput.value = '';
 
+            // Disable the send button to prevent multiple requests
+            const sendButton = document.querySelector('#chatContainer').parentElement.querySelector('button');
+            const originalButtonText = sendButton.textContent;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Sending...';
+
             try {
                 statusDiv.innerHTML = '<div class="status info">🤔 Thinking...</div>';
                 
                 const url = API_BASE_URL + '/query/tenant';
                 const body = { query: message, tenant_id: currentTenantId };
+                
+                // Add timeout to prevent hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1346,12 +1369,19 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
                     },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(body),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
 
                 const result = await response.json();
 
-                if (response.ok) {
+                if (result && result.answer) {
                     statusDiv.innerHTML = '<div class="status success">✅ Response received</div>';
                     addMessage('assistant', result.answer);
                     
@@ -1364,12 +1394,22 @@
                     saveQueryToHistory(message, result.answer, result.sources);
                     await updateTenantStats();
                 } else {
-                    statusDiv.innerHTML = `<div class="status error">❌ Query failed: ${result.detail || 'Unknown error'}</div>`;
-                    addMessage('assistant', `❌ Error: ${result.detail || 'Failed to get response'}`);
+                    throw new Error('Invalid response format');
                 }
             } catch (error) {
-                statusDiv.innerHTML = `<div class="status error">❌ Query failed: ${error.message}</div>`;
-                addMessage('assistant', `❌ Error: ${error.message}`);
+                console.error('Send message error:', error);
+                
+                if (error.name === 'AbortError') {
+                    statusDiv.innerHTML = '<div class="status error">❌ Request timed out. Please try again.</div>';
+                    addMessage('assistant', '❌ Request timed out. Please try again.');
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Query failed: ${error.message}</div>`;
+                    addMessage('assistant', `❌ Error: ${error.message}`);
+                }
+            } finally {
+                // Re-enable the send button
+                sendButton.disabled = false;
+                sendButton.textContent = originalButtonText;
             }
         }
 
@@ -2048,6 +2088,25 @@
             }
         }
 
+        // Refresh connection function
+        async function refreshConnection() {
+            addMessage('system', '🔄 Refreshing connection...');
+            authToken = null;
+            currentTenantId = null;
+            currentTenantInfo = null;
+            
+            // Clear chat status
+            document.getElementById('chatStatus').innerHTML = '';
+            
+            // Reinitialize
+            const success = await initializeAuth();
+            if (success) {
+                addMessage('system', '✅ Connection refreshed successfully!');
+            } else {
+                addMessage('system', '❌ Failed to refresh connection. Please check server status.');
+            }
+        }
+
         // Initialize the interface
         window.onload = function() {
             updateApiUrls();
@@ -2063,6 +2122,23 @@
             window.sendMessage = sendMessage;
             window.uploadDocument = uploadDocument;
             window.uploadDocumentFromTab = uploadDocumentFromTab;
+            window.searchDocuments = searchDocuments;
+            window.clearSearch = clearSearch;
+            window.loadQueryHistory = loadQueryHistory;
+            window.clearHistory = clearHistory;
+            window.loadDocuments = loadDocuments;
+            window.loadAnalytics = loadAnalytics;
+            window.loadApiDocumentation = loadApiDocumentation;
+            window.updateResponseStyle = updateResponseStyle;
+            window.selectTenant = selectTenant;
+            window.deleteTenant = deleteTenant;
+            window.deleteDocument = deleteDocument;
+            window.toggleFavorite = toggleFavorite;
+            window.reuseQuery = reuseQuery;
+            window.deleteQuery = deleteQuery;
+            window.copyApiKey = copyApiKey;
+            window.registerTenant = registerTenant;
+            window.refreshConnection = refreshConnection;
             
             // Add form submit handler
             document.getElementById('tenantForm').addEventListener('submit', registerTenant);
