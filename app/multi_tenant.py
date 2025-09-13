@@ -103,6 +103,10 @@ class MultiTenantRAG:
         """Get tenant configuration"""
         return postgres_manager.get_tenant(tenant_id) or {}
     
+    def get_tenant_by_domain(self, domain: str) -> Dict:
+        """Get tenant by domain"""
+        return postgres_manager.get_tenant_by_domain(domain) or {}
+    
     def list_tenants(self) -> List[Dict]:
         """List all tenants with basic info"""
         return postgres_manager.list_tenants()

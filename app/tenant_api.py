@@ -89,14 +89,25 @@ async def register_tenant(
         tenant_id = tenant_data.company_domain.replace(".", "_").replace("-", "_").lower()
         logger.info(f"Generated tenant_id: {tenant_id} from domain: {tenant_data.company_domain}")
         
-        # Check if tenant already exists
-        existing_tenant = multi_tenant_rag.get_tenant(tenant_id)
-        if existing_tenant:
-            logger.warning(f"Tenant {tenant_id} already exists: {existing_tenant.get('company_name')}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Tenant with domain {tenant_data.company_domain} already exists"
-            )
+        # Check if tenant already exists by domain (more reliable than ID)
+        try:
+            # Try to get tenant by domain first
+            existing_tenant = multi_tenant_rag.get_tenant_by_domain(tenant_data.company_domain)
+            if existing_tenant:
+                logger.warning(f"Tenant with domain {tenant_data.company_domain} already exists: {existing_tenant.get('company_name')}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Tenant with domain {tenant_data.company_domain} already exists"
+                )
+        except AttributeError:
+            # Fallback to checking by tenant_id if get_tenant_by_domain doesn't exist
+            existing_tenant = multi_tenant_rag.get_tenant(tenant_id)
+            if existing_tenant:
+                logger.warning(f"Tenant {tenant_id} already exists: {existing_tenant.get('company_name')}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Tenant with domain {tenant_data.company_domain} already exists"
+                )
         
         # Add tenant
         success = multi_tenant_rag.add_tenant(tenant_id, tenant_data.dict())

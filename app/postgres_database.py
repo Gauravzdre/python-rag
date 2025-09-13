@@ -237,7 +237,8 @@ class PostgreSQLManager:
                     LEFT JOIN tenant_stats s ON t.tenant_id = s.tenant_id
                     GROUP BY t.tenant_id, t.company_name, t.company_domain, t.company_email,
                              t.company_phone, t.api_key, t.jwt_secret, t.status, t.plan,
-                             t.max_documents, t.max_queries_per_day, t.created_at, t.updated_at, t.settings
+                             t.max_documents, t.max_queries_per_day, t.created_at, t.updated_at, t.settings,
+                             s.total_queries
                     ORDER BY t.created_at DESC
                 """))
                 
