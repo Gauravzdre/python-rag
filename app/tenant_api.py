@@ -126,6 +126,13 @@ async def register_tenant(
         tenant_docs = multi_tenant_rag.get_tenant_documents(tenant_id)
         tenant_stats = multi_tenant_rag.get_tenant_stats(tenant_id)
         
+        # Convert datetime to string if needed
+        created_at = tenant_info.get("created_at", "")
+        if hasattr(created_at, 'isoformat'):
+            created_at = created_at.isoformat()
+        elif created_at is None:
+            created_at = ""
+        
         return TenantResponse(
             tenant_id=tenant_id,
             company_name=tenant_info.get("company_name", "Unknown"),
@@ -134,7 +141,7 @@ async def register_tenant(
             api_key=tenant_info.get("api_key", ""),
             status=tenant_info.get("status", "active"),
             plan=tenant_info.get("plan", "basic"),
-            created_at=tenant_info.get("created_at", ""),
+            created_at=str(created_at),
             document_count=len(tenant_docs),
             total_queries=tenant_stats.get("total_queries", 0) if tenant_stats else 0
         )
@@ -191,6 +198,13 @@ async def get_tenant(
         tenant_docs = multi_tenant_rag.get_tenant_documents(tenant_id)
         tenant_stats = multi_tenant_rag.get_tenant_stats(tenant_id)
         
+        # Convert datetime to string if needed
+        created_at = tenant_info.get("created_at", "")
+        if hasattr(created_at, 'isoformat'):
+            created_at = created_at.isoformat()
+        elif created_at is None:
+            created_at = ""
+        
         return TenantResponse(
             tenant_id=tenant_id,
             company_name=tenant_info.get("company_name", "Unknown"),
@@ -199,7 +213,7 @@ async def get_tenant(
             api_key=tenant_info.get("api_key", ""),
             status=tenant_info.get("status", "active"),
             plan=tenant_info.get("plan", "basic"),
-            created_at=tenant_info.get("created_at", ""),
+            created_at=str(created_at),
             document_count=len(tenant_docs),
             total_queries=tenant_stats.get("total_queries", 0) if tenant_stats else 0
         )

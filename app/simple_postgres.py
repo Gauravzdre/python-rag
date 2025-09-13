@@ -171,6 +171,13 @@ class SimplePostgreSQLManager:
                         tenant_data = dict(row)
                         # Parse settings JSON
                         tenant_data["settings"] = json.loads(tenant_data["settings"] or "{}")
+                        
+                        # Convert datetime fields to strings
+                        if tenant_data.get("created_at") and hasattr(tenant_data["created_at"], 'isoformat'):
+                            tenant_data["created_at"] = tenant_data["created_at"].isoformat()
+                        if tenant_data.get("updated_at") and hasattr(tenant_data["updated_at"], 'isoformat'):
+                            tenant_data["updated_at"] = tenant_data["updated_at"].isoformat()
+                        
                         return tenant_data
                     return None
                 
@@ -221,6 +228,13 @@ class SimplePostgreSQLManager:
                     for row in cursor.fetchall():
                         tenant_data = dict(row)
                         tenant_data["settings"] = json.loads(tenant_data["settings"] or "{}")
+                        
+                        # Convert datetime fields to strings
+                        if tenant_data.get("created_at") and hasattr(tenant_data["created_at"], 'isoformat'):
+                            tenant_data["created_at"] = tenant_data["created_at"].isoformat()
+                        if tenant_data.get("updated_at") and hasattr(tenant_data["updated_at"], 'isoformat'):
+                            tenant_data["updated_at"] = tenant_data["updated_at"].isoformat()
+                        
                         tenants.append(tenant_data)
                     
                     return tenants
