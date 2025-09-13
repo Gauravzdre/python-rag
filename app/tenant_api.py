@@ -57,6 +57,9 @@ class TenantResponse(BaseModel):
     created_at: str
     document_count: int
     total_queries: int
+    
+    class Config:
+        from_attributes = True
 
 class TenantListResponse(BaseModel):
     tenants: List[Dict]
@@ -125,15 +128,15 @@ async def register_tenant(
         
         return TenantResponse(
             tenant_id=tenant_id,
-            company_name=tenant_info["company_name"],
-            company_domain=tenant_info["company_domain"],
-            company_email=tenant_info["company_email"],
-            api_key=tenant_info["api_key"],
-            status=tenant_info["status"],
-            plan=tenant_info["plan"],
-            created_at=tenant_info["created_at"],
+            company_name=tenant_info.get("company_name", "Unknown"),
+            company_domain=tenant_info.get("company_domain", "Unknown"),
+            company_email=tenant_info.get("company_email", "Unknown"),
+            api_key=tenant_info.get("api_key", ""),
+            status=tenant_info.get("status", "active"),
+            plan=tenant_info.get("plan", "basic"),
+            created_at=tenant_info.get("created_at", ""),
             document_count=len(tenant_docs),
-            total_queries=tenant_stats.get("total_queries", 0)
+            total_queries=tenant_stats.get("total_queries", 0) if tenant_stats else 0
         )
         
     except HTTPException:
@@ -190,15 +193,15 @@ async def get_tenant(
         
         return TenantResponse(
             tenant_id=tenant_id,
-            company_name=tenant_info["company_name"],
-            company_domain=tenant_info["company_domain"],
-            company_email=tenant_info["company_email"],
-            api_key=tenant_info["api_key"],
-            status=tenant_info["status"],
-            plan=tenant_info["plan"],
-            created_at=tenant_info["created_at"],
+            company_name=tenant_info.get("company_name", "Unknown"),
+            company_domain=tenant_info.get("company_domain", "Unknown"),
+            company_email=tenant_info.get("company_email", "Unknown"),
+            api_key=tenant_info.get("api_key", ""),
+            status=tenant_info.get("status", "active"),
+            plan=tenant_info.get("plan", "basic"),
+            created_at=tenant_info.get("created_at", ""),
             document_count=len(tenant_docs),
-            total_queries=tenant_stats.get("total_queries", 0)
+            total_queries=tenant_stats.get("total_queries", 0) if tenant_stats else 0
         )
         
     except HTTPException:

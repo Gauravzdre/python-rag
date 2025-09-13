@@ -1382,9 +1382,13 @@
 
         // Load tenants
         async function loadTenants() {
-            if (!authToken) return;
+            if (!authToken) {
+                console.error('No auth token available for loading tenants');
+                return;
+            }
 
             try {
+                console.log('Loading tenants from:', API_BASE_URL + '/tenants/');
                 const response = await fetch(API_BASE_URL + '/tenants/', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -1393,9 +1397,12 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Tenants loaded:', data);
                     displayTenants(data.tenants);
                 } else {
-                    console.error('Failed to load tenants');
+                    console.error('Failed to load tenants:', response.status, response.statusText);
+                    const errorText = await response.text();
+                    console.error('Error details:', errorText);
                 }
             } catch (error) {
                 console.error('Error loading tenants:', error);
@@ -1458,19 +1465,30 @@
 
         // Select tenant
         async function selectTenant(tenantId) {
-            currentTenantId = tenantId;
-            
-            // Update UI
-            const tenant = await getTenantInfo(tenantId);
-            if (tenant) {
-                document.getElementById('currentTenantName').textContent = tenant.company_name;
-                document.getElementById('currentTenantDomain').textContent = tenant.company_domain;
-                currentTenantInfo = tenant;
+            try {
+                currentTenantId = tenantId;
+                console.log('Selecting tenant:', tenantId);
+                
+                // Update UI
+                const tenant = await getTenantInfo(tenantId);
+                if (tenant) {
+                    document.getElementById('currentTenantName').textContent = tenant.company_name;
+                    document.getElementById('currentTenantDomain').textContent = tenant.company_domain;
+                    currentTenantInfo = tenant;
+                    console.log('Tenant selected successfully:', tenant.company_name);
+                } else {
+                    console.error('Failed to get tenant info for:', tenantId);
+                    document.getElementById('currentTenantName').textContent = 'Error loading tenant';
+                    document.getElementById('currentTenantDomain').textContent = 'Please try again';
+                }
+                
+                await updateTenantStats();
+                closeTenantSelector();
+                addMessage('system', `🏢 Switched to tenant: ${tenant?.company_name || tenantId}`);
+            } catch (error) {
+                console.error('Error selecting tenant:', error);
+                addMessage('system', `❌ Error selecting tenant: ${error.message}`);
             }
-            
-            await updateTenantStats();
-            closeTenantSelector();
-            addMessage('system', `🏢 Switched to tenant: ${tenant?.company_name || tenantId}`);
         }
 
         // Get tenant info
@@ -1485,7 +1503,13 @@
                 });
 
                 if (response.ok) {
-                    return await response.json();
+                    const tenantData = await response.json();
+                    console.log('Tenant info retrieved:', tenantData);
+                    return tenantData;
+                } else {
+                    console.error('Failed to get tenant info:', response.status, response.statusText);
+                    const errorText = await response.text();
+                    console.error('Error details:', errorText);
                 }
             } catch (error) {
                 console.error('Error getting tenant info:', error);
