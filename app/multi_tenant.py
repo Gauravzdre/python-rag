@@ -12,6 +12,9 @@ from pathlib import Path
 from datetime import datetime
 import logging
 
+# Import LangChain text splitter for proper chunking
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 # Configure logging first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +30,14 @@ class MultiTenantRAG:
     def __init__(self):
         # Initialize database and migrate from JSON if needed
         self.init_database()
+        
+        # Initialize text splitter for proper document chunking
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
     
     def init_database(self):
         """Initialize database and migrate from JSON files if they exist"""
@@ -133,13 +144,23 @@ class MultiTenantRAG:
             logger.warning(f"Tenant {tenant_id} has reached document limit")
             return False
         
+        # Create proper chunks using LangChain text splitter
+        try:
+            chunks = self.text_splitter.split_text(content)
+            logger.info(f"Created {len(chunks)} chunks for document {filename}")
+        except Exception as e:
+            logger.error(f"Error creating chunks for {filename}: {e}")
+            # Fallback to simple chunking if LangChain fails
+            chunks = [content[i:i+1000] for i in range(0, len(content), 800)]
+            logger.info(f"Using fallback chunking: {len(chunks)} chunks")
+        
         document = {
             "document_id": str(uuid.uuid4()),
             "filename": filename,
             "content": content,
             "file_type": file_type,
             "upload_time": datetime.now().isoformat(),
-            "chunks": [content[i:i+1000] for i in range(0, len(content), 800)]
+            "chunks": chunks
         }
         
         return postgres_manager.add_document(tenant_id, document)

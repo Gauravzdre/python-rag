@@ -66,6 +66,7 @@ class MultiTenantRAGEngine:
             
             # Read file content based on file type
             content = self._extract_content(file)
+            logger.info(f"Extracted content length: {len(content) if content else 0} characters")
             
             if not content:
                 return {"chunks": 0, "status": "error", "message": "Could not extract content from file"}
@@ -84,11 +85,16 @@ class MultiTenantRAGEngine:
             if not success:
                 return {"chunks": 0, "status": "error", "message": "Failed to add document to tenant"}
             
-            # Get document count for response
+            # Get the newly uploaded document to count its chunks
             documents = multi_tenant_rag.get_tenant_documents(tenant_id)
-            chunk_count = sum(len(doc.get("chunks", [])) for doc in documents)
+            # Find the most recent document (should be the one we just uploaded)
+            if documents:
+                latest_doc = max(documents, key=lambda x: x.get("upload_time", ""))
+                chunk_count = len(latest_doc.get("chunks", []))
+            else:
+                chunk_count = 0
             
-            logger.info(f"Document processed for tenant {tenant_id}: {file.filename}")
+            logger.info(f"Document processed for tenant {tenant_id}: {file.filename} - {chunk_count} chunks")
             
             return {
                 "chunks": chunk_count,
