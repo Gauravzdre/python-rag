@@ -17,6 +17,7 @@
     const config = {
         apiUrl: script.getAttribute('data-api-url') || 'http://localhost:8000',
         tenantId: script.getAttribute('data-tenant-id') || 'default',
+        apiKey: script.getAttribute('data-api-key') || null,
         position: script.getAttribute('data-position') || 'bottom-right',
         theme: script.getAttribute('data-theme') || 'default',
         title: script.getAttribute('data-title') || 'AI Assistant'
@@ -152,14 +153,20 @@
     // Initialize widget
     async function initWidget() {
         try {
-            // Get embed token (public endpoint)
-            const response = await fetch(`${config.apiUrl}/embed-token`);
-            if (response.ok) {
-                const data = await response.json();
-                authToken = data.token;
-                console.log('RAG Widget: Connected successfully');
+            if (config.apiKey) {
+                // Use the provided API key directly
+                authToken = config.apiKey;
+                console.log('RAG Widget: Using provided API key');
             } else {
-                console.error('RAG Widget: Failed to get embed token');
+                // Try to get embed token (public endpoint)
+                const response = await fetch(`${config.apiUrl}/embed-token`);
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    console.log('RAG Widget: Connected with embed token');
+                } else {
+                    console.error('RAG Widget: Failed to get embed token');
+                }
             }
         } catch (error) {
             console.error('RAG Widget: Connection error:', error);
@@ -252,16 +259,33 @@
         sendButton.disabled = true;
         
         try {
-            const response = await fetch(`${config.apiUrl}/embed/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    query: message,
-                    tenant_id: config.tenantId
-                })
-            });
+            // Try authenticated endpoint first if we have an API key
+            let response;
+            if (authToken && authToken.startsWith('mt_')) {
+                response = await fetch(`${config.apiUrl}/query/tenant`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        tenant_id: config.tenantId
+                    })
+                });
+            } else {
+                // Fallback to embed endpoint
+                response = await fetch(`${config.apiUrl}/embed/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        tenant_id: config.tenantId
+                    })
+                });
+            }
             
             if (response.ok) {
                 const result = await response.json();

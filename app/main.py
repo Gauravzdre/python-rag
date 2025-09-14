@@ -34,6 +34,24 @@ security = HTTPBearer()
 # Include tenant management routes
 app.include_router(tenant_router)
 
+# Serve static files for embedding
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/rag-widget.js")
+async def serve_widget_js():
+    """Serve the RAG widget JavaScript file"""
+    return FileResponse("rag-widget.js", media_type="application/javascript")
+
+@app.get("/embed_widget.html")
+async def serve_embed_widget():
+    """Serve the embed widget HTML file"""
+    return FileResponse("embed_widget.html", media_type="text/html")
+
+@app.get("/embed_example.html")
+async def serve_embed_example():
+    """Serve the embed example HTML file"""
+    return FileResponse("embed_example.html", media_type="text/html")
+
 # Serve web interface
 @app.get("/")
 async def root():
@@ -189,7 +207,15 @@ def get_token():
 
 @app.get("/embed-token")
 def get_embed_token():
-    """Generate a public token for embedding (no auth required)"""
+    """
+    Generate a public token for embedding (no auth required)
+    
+    This endpoint provides a public JWT token that can be used for embedding
+    the chatbot widget on external websites. The token expires in 24 hours.
+    
+    Returns:
+        - token: JWT token for embedding
+    """
     from app.auth import SECRET_KEY
     from jose import jwt
     import time
@@ -204,7 +230,20 @@ def get_embed_token():
 
 @app.post("/embed/query")
 async def embed_query(request: QueryRequest):
-    """Public endpoint for embedded chatbot queries (no auth required)"""
+    """
+    Public endpoint for embedded chatbot queries (no auth required)
+    
+    This endpoint allows external websites to query the RAG system without authentication.
+    It's designed for embedding the chatbot widget on third-party websites.
+    
+    Request Body:
+        - query: The user's question
+        - tenant_id: The tenant ID (defaults to "default")
+    
+    Returns:
+        - answer: The AI-generated response
+        - sources: List of source documents used
+    """
     try:
         # Use multi-tenant engine if tenant_id is provided and not default
         if request.tenant_id != "default":
