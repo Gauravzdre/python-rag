@@ -247,34 +247,34 @@
         loading.style.display = 'block';
         sendButton.disabled = true;
         
-        try {
-            // Try public embed endpoint first (no auth required)
-            let response = await fetch(`${config.apiUrl}/embed/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    query: message,
-                    tenant_id: config.tenantId
-                })
-            });
-            
-            // If embed endpoint fails, try authenticated endpoint as fallback
-            if (!response.ok && authToken && authToken.startsWith('mt_')) {
-                console.log('Embed endpoint failed, trying authenticated endpoint...');
-                response = await fetch(`${config.apiUrl}/query/tenant`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        query: message,
-                        tenant_id: config.tenantId
-                    })
-                });
-            }
+         try {
+             // Try public embed endpoint first (this should work for all cases)
+             let response = await fetch(`${config.apiUrl}/embed/query`, {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 },
+                 body: JSON.stringify({
+                     query: message,
+                     tenant_id: config.tenantId
+                 })
+             });
+             
+             // If embed endpoint fails, try authenticated endpoint as fallback
+             if (!response.ok && authToken && authToken.startsWith('mt_')) {
+                 console.log('Embed endpoint failed, trying authenticated endpoint...');
+                 response = await fetch(`${config.apiUrl}/query/tenant`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                         'Authorization': `Bearer ${authToken}`
+                     },
+                     body: JSON.stringify({
+                         query: message,
+                         tenant_id: config.tenantId
+                     })
+                 });
+             }
             
             if (response.ok) {
                 const result = await response.json();
@@ -284,34 +284,34 @@
                     const sources = result.sources.map(s => s.source).join(', ');
                     addMessage('system', `📚 Sources: ${sources}`);
                 }
-            } else {
-                // Try with default tenant as last resort
-                console.log('Trying with default tenant as last resort...');
-                const defaultResponse = await fetch(`${config.apiUrl}/embed/query`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        query: message,
-                        tenant_id: 'default'
-                    })
-                });
-                
-                if (defaultResponse.ok) {
-                    const result = await defaultResponse.json();
-                    addMessage('assistant', result.answer);
-                    
-                    if (result.sources && result.sources.length > 0) {
-                        const sources = result.sources.map(s => s.source).join(', ');
-                        addMessage('system', `📚 Sources: ${sources}`);
-                    }
-                } else {
-                    const errorText = await response.text();
-                    console.error('RAG Widget: API Error:', response.status, errorText);
-                    addMessage('assistant', `Sorry, I encountered an error (${response.status}). Please try again.`);
-                }
-            }
+                 } else {
+                     // Try with default tenant as last resort
+                     console.log('Trying with default tenant as last resort...');
+                     const defaultResponse = await fetch(`${config.apiUrl}/embed/query`, {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json'
+                         },
+                         body: JSON.stringify({
+                             query: message,
+                             tenant_id: 'default'
+                         })
+                     });
+                     
+                     if (defaultResponse.ok) {
+                         const result = await defaultResponse.json();
+                         addMessage('assistant', result.answer);
+                         
+                         if (result.sources && result.sources.length > 0) {
+                             const sources = result.sources.map(s => s.source).join(', ');
+                             addMessage('system', `📚 Sources: ${sources}`);
+                         }
+                     } else {
+                         const errorText = await response.text();
+                         console.error('RAG Widget: API Error:', response.status, errorText);
+                         addMessage('assistant', `Sorry, I encountered an error (${response.status}). Please try again.`);
+                     }
+                 }
         } catch (error) {
             console.error('RAG Widget: Send error:', error);
             addMessage('assistant', 'Sorry, I\'m having trouble connecting. Please try again later.');
