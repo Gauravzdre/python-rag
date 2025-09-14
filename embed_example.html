@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example Website with RAG Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .content {
+            line-height: 1.6;
+            color: #666;
+        }
+        .embed-code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Omegagaze Online</h1>
+        
+        <div class="content">
+            <p>Welcome to Omegagaze! We provide cutting-edge technology solutions and innovative services to help your business thrive in the digital world.</p>
+            
+            <h2>About Omegagaze</h2>
+            <p>Omegagaze is a leading technology company specializing in advanced solutions and exceptional customer service. Our team of experts is dedicated to helping you achieve your digital transformation goals.</p>
+            
+            <h2>Our Services</h2>
+            <ul>
+                <li>Web Development & Design</li>
+                <li>AI & Machine Learning Solutions</li>
+                <li>Cloud Infrastructure</li>
+                <li>Digital Marketing</li>
+                <li>Technical Consulting</li>
+            </ul>
+            
+            <h2>Contact Us</h2>
+            <p>Feel free to reach out to us for any questions or inquiries. You can also use our AI assistant in the bottom-right corner to get instant answers about our services!</p>
+            
+            <hr>
+            
+            <h2>How to Embed This Chatbot</h2>
+            <p>To add this RAG chatbot to your website, simply include this script tag in your HTML:</p>
+            
+            <div class="embed-code">
+&lt;script src="https://python-rag-9u2g.onrender.com/rag-widget.js" 
+        data-api-url="https://python-rag-9u2g.onrender.com/" 
+        data-tenant-id="omegagaze_online"
+        data-title="Omegagaze AI Assistant"&gt;
+&lt;/script&gt;
+            </div>
+            
+            <h3>Configuration Options:</h3>
+            <ul>
+                <li><strong>data-api-url</strong>: Your RAG API server URL</li>
+                <li><strong>data-tenant-id</strong>: Your tenant ID (create one in the admin panel)</li>
+                <li><strong>data-title</strong>: Custom title for the chatbot</li>
+                <li><strong>data-position</strong>: Position (bottom-right, bottom-left, etc.)</li>
+                <li><strong>data-theme</strong>: Theme color scheme</li>
+            </ul>
+            
+            <h3>Steps to Set Up:</h3>
+            <ol>
+                <li>Start your RAG API server</li>
+                <li>Create a tenant in the admin panel</li>
+                <li>Upload documents for that tenant</li>
+                <li>Add the script tag to your website</li>
+                <li>Test the chatbot!</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- RAG Chatbot Widget - This is how you embed it! -->
+    <script src="rag-widget.js" 
+            data-api-url="https://python-rag-9u2g.onrender.com/" 
+            data-tenant-id="omegagaze_online"
+            data-title="Omegagaze AI Assistant">
+    </script>
+</body>
+</html>

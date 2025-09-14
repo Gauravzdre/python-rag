@@ -23,7 +23,7 @@ app = FastAPI(title="Multi-Tenant RAG Chatbot API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins for embedding
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -186,6 +186,36 @@ def get_token():
     
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"token": token}
+
+@app.get("/embed-token")
+def get_embed_token():
+    """Generate a public token for embedding (no auth required)"""
+    from app.auth import SECRET_KEY
+    from jose import jwt
+    import time
+    
+    payload = {
+        "user_id": "embed_user",
+        "exp": int(time.time()) + 86400  # 24 hour expiry for embedding
+    }
+    
+    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return {"token": token}
+
+@app.post("/embed/query")
+async def embed_query(request: QueryRequest):
+    """Public endpoint for embedded chatbot queries (no auth required)"""
+    try:
+        # Use multi-tenant engine if tenant_id is provided and not default
+        if request.tenant_id != "default":
+            response = await multi_tenant_rag_engine.process_query(request.tenant_id, request.query)
+        else:
+            # Fallback to single-tenant engine for backward compatibility
+            response = await process_query(request.query)
+        
+        return response
+    except Exception as e:
+        return {"answer": f"Error: {str(e)}", "sources": []}
 
 # Tenant-specific endpoints (no admin access required)
 

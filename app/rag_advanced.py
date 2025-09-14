@@ -30,7 +30,10 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+try:
+    load_dotenv()
+except Exception as e:
+    logger.warning(f"Could not load .env file: {e}")
 
 class AdvancedRAGEngine:
     def __init__(self, collection_name: str = "rag_documents", persist_directory: str = "./chroma_db"):
