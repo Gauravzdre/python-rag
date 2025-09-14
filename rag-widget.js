@@ -1,14 +1,3 @@
-/**
- * RAG Chatbot Widget - Embeddable JavaScript
- * Add this script to any website to embed the RAG chatbot
- * 
- * Usage:
- * <script src="https://your-domain.com/rag-widget.js" 
- *         data-api-url="http://localhost:8000" 
- *         data-tenant-id="your-tenant-id">
- * </script>
- */
-
 (function() {
     'use strict';
 
@@ -156,7 +145,7 @@
             if (config.apiKey) {
                 // Use the provided API key directly
                 authToken = config.apiKey;
-                console.log('RAG Widget: Using provided API key');
+                console.log('RAG Widget: Using provided API key for', config.tenantId);
             } else {
                 // Try to get embed token (public endpoint)
                 const response = await fetch(`${config.apiUrl}/embed-token`);
@@ -259,26 +248,26 @@
         sendButton.disabled = true;
         
         try {
-            // Try authenticated endpoint first if we have an API key
-            let response;
-            if (authToken && authToken.startsWith('mt_')) {
+            // Try public embed endpoint first (no auth required)
+            let response = await fetch(`${config.apiUrl}/embed/query`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: message,
+                    tenant_id: config.tenantId
+                })
+            });
+            
+            // If embed endpoint fails, try authenticated endpoint as fallback
+            if (!response.ok && authToken && authToken.startsWith('mt_')) {
+                console.log('Embed endpoint failed, trying authenticated endpoint...');
                 response = await fetch(`${config.apiUrl}/query/tenant`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        query: message,
-                        tenant_id: config.tenantId
-                    })
-                });
-            } else {
-                // Fallback to embed endpoint
-                response = await fetch(`${config.apiUrl}/embed/query`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         query: message,
@@ -296,7 +285,32 @@
                     addMessage('system', `📚 Sources: ${sources}`);
                 }
             } else {
-                addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+                // Try with default tenant as last resort
+                console.log('Trying with default tenant as last resort...');
+                const defaultResponse = await fetch(`${config.apiUrl}/embed/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        tenant_id: 'default'
+                    })
+                });
+                
+                if (defaultResponse.ok) {
+                    const result = await defaultResponse.json();
+                    addMessage('assistant', result.answer);
+                    
+                    if (result.sources && result.sources.length > 0) {
+                        const sources = result.sources.map(s => s.source).join(', ');
+                        addMessage('system', `📚 Sources: ${sources}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('RAG Widget: API Error:', response.status, errorText);
+                    addMessage('assistant', `Sorry, I encountered an error (${response.status}). Please try again.`);
+                }
             }
         } catch (error) {
             console.error('RAG Widget: Send error:', error);
@@ -317,11 +331,24 @@
 
     // Initialize when DOM is ready
     function initialize() {
+        console.log('RAG Widget: Initializing with config:', config);
+        
         // Add widget HTML to page
-        document.body.insertAdjacentHTML('beforeend', createWidgetHTML());
+        const widgetHTML = createWidgetHTML();
+        console.log('RAG Widget: Created HTML:', widgetHTML.substring(0, 200) + '...');
+        
+        document.body.insertAdjacentHTML('beforeend', widgetHTML);
+        
+        // Check if elements were created
+        const widget = document.getElementById('rag-chatbot-widget');
+        const toggle = document.getElementById('rag-toggle-btn');
+        console.log('RAG Widget: Widget element found:', !!widget);
+        console.log('RAG Widget: Toggle button found:', !!toggle);
         
         // Initialize connection
         initWidget();
+        
+        console.log('RAG Widget: Widget HTML added to page');
     }
 
     // Wait for DOM to be ready
