@@ -1385,13 +1385,11 @@
                     statusDiv.innerHTML = '<div class="status success">✅ Response received</div>';
                     addMessage('assistant', result.answer);
                     
-                    if (result.sources && result.sources.length > 0) {
-                        const sources = result.sources.map(s => s.source).join(', ');
-                        addMessage('system', `📚 Sources: ${sources}`);
-                    }
+                    // Don't show sources to users - keep conversation natural
+                    // Sources are still saved in backend for admin/debugging
                     
-                    // Save to query history
-                    saveQueryToHistory(message, result.answer, result.sources);
+                    // Save to query history (sources kept for admin view only)
+                    saveQueryToHistory(message, result.answer, result.sources || []);
                     await updateTenantStats();
                 } else {
                     throw new Error('Invalid response format');

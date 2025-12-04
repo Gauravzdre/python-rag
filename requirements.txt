@@ -21,3 +21,7 @@ pypdf==4.0.1
 
 # Additional utilities
 numpy>=1.24.0
+
+# Vector Embeddings & Semantic Search (Free)
+chromadb>=0.4.0
+sentence-transformers>=2.2.0

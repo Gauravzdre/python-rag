@@ -280,10 +280,7 @@
                 const result = await response.json();
                 addMessage('assistant', result.answer);
                 
-                if (result.sources && result.sources.length > 0) {
-                    const sources = result.sources.map(s => s.source).join(', ');
-                    addMessage('system', `📚 Sources: ${sources}`);
-                }
+                // Don't show sources - keep conversation natural for customers
                  } else {
                      // Try with default tenant as last resort
                      console.log('Trying with default tenant as last resort...');
@@ -302,10 +299,7 @@
                          const result = await defaultResponse.json();
                          addMessage('assistant', result.answer);
                          
-                         if (result.sources && result.sources.length > 0) {
-                             const sources = result.sources.map(s => s.source).join(', ');
-                             addMessage('system', `📚 Sources: ${sources}`);
-                         }
+                         // Don't show sources - keep conversation natural
                      } else {
                          const errorText = await response.text();
                          console.error('RAG Widget: API Error:', response.status, errorText);
